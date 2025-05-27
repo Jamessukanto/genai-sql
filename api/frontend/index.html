@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat Assistant</title>
+</head>
+<body>
+  <h1>Chat Assistant</h1>
+  <label for="fleet_id">Select Fleet ID:</label>
+  <select id="fleet_id">
+    <option value="1">1</option>
+    <option value="2">2</option>
+  </select>
+  <br><br>
+  <label for="query">Enter Query:</label>
+  <input type="text" id="query" placeholder="Enter your query here">
+  <button id="submit">Submit</button>
+  <pre id="response"></pre>
+
+  <script>
+    document.getElementById('submit').addEventListener('click', async () => {
+      const fleetId = document.getElementById('fleet_id').value;
+      const query = document.getElementById('query').value;
+  
+      try {
+        // Step 1: Request JWT Token from Backend
+        const tokenResponse = await fetch('http://localhost:8000/generate_jwt_token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sub: 'postgres', fleet_id: fleetId })
+        });
+  
+        if (!tokenResponse.ok) {
+          throw new Error('Failed to generate token');
+        }
+  
+        const { token } = await tokenResponse.json();
+  
+        // Step 2: Send Query to Backend with Token
+        const chatResponse = await fetch('http://localhost:8000/chat/execute_user_query', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ query, fleet_id: fleetId }) 
+        });
+  
+        if (!chatResponse.ok) {
+          throw new Error('Failed to fetch chat response');
+        }
+  
+        const responseData = await chatResponse.json();
+        document.getElementById('response').textContent = JSON.stringify(responseData, null, 2);
+      } catch (error) {
+        document.getElementById('response').textContent = `Error: ${error.message}`;
+      }
+    });
+  </script>
+          
+
+</body>
+</html>
