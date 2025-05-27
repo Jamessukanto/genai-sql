@@ -1,1 +1,9 @@
+# Sensitive files
 .env
+
+# Docker-related files
+docker-compose.yml
+Dockerfile
+
+# Just ignore
+__pycache__/
