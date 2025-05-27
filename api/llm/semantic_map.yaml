@@ -1,0 +1,67 @@
+SOH:
+  description: "State of Health: long-term battery condition percentage"
+  columns:
+    - processed_metrics.battery_health_pct
+    - battery_cycles.soh_pct
+SOC:
+  description: "State of Charge: current battery level percentage"
+  columns:
+    - raw_telemetry.soc_pct
+    - processed_metrics.soc_band
+"SOC comfort zone":
+  description: "Healthy operating band for SOC"
+  columns:
+    - fleet_daily_summary.avg_soc_pct
+    - processed_metrics.soc_band
+"SRM T3":
+  description: "Vehicle model filter for SRM T3 vans"
+  columns:
+    - vehicles.model
+GBM6296G:
+  description: "Specific vehicle registration plate as identifier"
+  columns:
+    - vehicles.registration_no
+    - vehicles.vehicle_id
+Trip:
+  description: "Trip records with start and end timestamps"
+  columns:
+    - trips.start_ts
+    - trips.end_ts
+    - trips.distance_km
+"Charging session":
+  description: "Charging events with SOC and energy delivered"
+  columns:
+    - charging_sessions.start_ts
+    - charging_sessions.end_ts
+    - charging_sessions.energy_kwh
+Alert:
+  description: "Alerts for safety or performance thresholds"
+  columns:
+    - alerts.alert_type
+    - alerts.alert_ts
+    - alerts.severity
+"Battery cycle":
+  description: "Cycling data for SOH analysis"
+  columns:
+    - battery_cycles.dod_pct
+    - battery_cycles.soh_pct
+"Geofence event":
+  description: "Geofence entry/exit events"
+  columns:
+    - geofence_events.enter_ts
+    - geofence_events.exit_ts
+Vehicle:
+  description: "Vehicle master records"
+  columns:
+    - vehicles.vehicle_id
+    - vehicles.vin
+Driver:
+  description: "Driver identity records"
+  columns:
+    - drivers.driver_id
+    - drivers.name
+Fleet:
+  description: "Fleet grouping identifier"
+  columns:
+    - fleets.fleet_id
+    - fleets.name
