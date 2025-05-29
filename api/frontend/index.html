@@ -22,23 +22,25 @@
     document.getElementById('submit').addEventListener('click', async () => {
       const fleetId = document.getElementById('fleet_id').value;
       const query = document.getElementById('query').value;
-  
+
       try {
+        const backendUrl = 'https://genai-sql-1.onrender.com';
+
         // Step 1: Request JWT Token from Backend
-        const tokenResponse = await fetch('http://localhost:8000/generate_jwt_token', {
+        const tokenResponse = await fetch(`${backendUrl}/generate_jwt_token`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ sub: 'postgres', fleet_id: fleetId })
         });
-  
+
         if (!tokenResponse.ok) {
           throw new Error('Failed to generate token');
         }
-  
+
         const { token } = await tokenResponse.json();
-  
+
         // Step 2: Send Query to Backend with Token
-        const chatResponse = await fetch('http://localhost:8000/chat/execute_user_query', {
+        const chatResponse = await fetch(`${backendUrl}/chat/execute_user_query`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -46,11 +48,11 @@
           },
           body: JSON.stringify({ query, fleet_id: fleetId }) 
         });
-  
+
         if (!chatResponse.ok) {
           throw new Error('Failed to fetch chat response');
         }
-  
+
         const responseData = await chatResponse.json();
         document.getElementById('response').textContent = JSON.stringify(responseData, null, 2);
       } catch (error) {
@@ -58,7 +60,8 @@
       }
     });
   </script>
-          
-
 </body>
 </html>
+
+
+<!-- 'http://localhost:8000/chat/execute_user_query' -->
