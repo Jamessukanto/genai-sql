@@ -22,21 +22,24 @@ class ChatRequest(BaseModel):
 @chat_router.post("/execute_user_query")
 async def execute_user_query(req: ChatRequest, user_info: dict = Depends(get_user_info)):
     print("\n\n" + ("="*80) + "\nExecuting user query.\n")
-    
+    print("in execute user, user_info:", user_info)
+
     user = user_info["user"]
     fleet_id = user_info["fleet_id"]
 
     try:
         # Set up LLM
         llm = init_chat_model(model="mistral-medium-latest", temperature=0)
-
+        print("llm inited")
         # Set up sql database 
         apply_session_variables_with_engine(engine, user, fleet_id)
         db = SQLDatabase(engine=engine)
         apply_session_variables_with_sql_database(db, user, fleet_id)
+        print("db inited")
 
         # Stream LLM agent response
         agent = await build_agent(db, llm)
+        print("agent inited")
         steps = []
         messages = [{"role": "user", "content": req.query}]
         for step in agent.stream({"messages": messages}, stream_mode="values"):

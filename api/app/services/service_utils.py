@@ -3,6 +3,8 @@ from fastapi import HTTPException, Header
 
 async def get_user_info(authorization: str = Header(...)) -> dict:
     try:
+
+        print("authorization:", authorization)
         parts = authorization.split()
         token_parts = parts[1].split('.')
 
@@ -23,6 +25,8 @@ async def get_user_info(authorization: str = Header(...)) -> dict:
             raise HTTPException(status_code=401, detail="User (sub) not found in token")
         if not fleet_id:
             raise HTTPException(status_code=401, detail="fleet_id not found in token")
+
+        print("user, fleet:", {"user": user, "fleet_id": fleet_id})
 
         return {"user": user, "fleet_id": fleet_id}
 
