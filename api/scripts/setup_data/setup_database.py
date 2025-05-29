@@ -48,16 +48,14 @@ async def create_table(db: Database, table: str, ddl: str, drop_existing: bool =
 
 async def setup_database_schema(
     db: Database,
-    drop_existing: bool = False
+    drop_existing: bool = False,
+    db_name: Optional[str] = None
 ) -> None:
     """Set up database schema only, without importing data."""
     print("\nSetting up database tables...")
     for table, ddl in CREATE_TABLE_QUERIES.items():
         print(f"Creating table '{table}'...")
         await create_table(db, table, ddl, drop_existing)
-
-    print("existing_db:", existing_db)
-    print("db_name:", db_name)
 
 
 async def main(
@@ -74,6 +72,8 @@ async def main(
         db_name: Optional database name to use (defaults to fleetdb)
     """
     try:
+        print(f"Starting database setup with existing_db: {existing_db}, db_name: {db_name}")
+        
         # Initialize database connection
         db = existing_db
         if not db:
