@@ -35,9 +35,8 @@ async def execute_user_query(req: ChatRequest, user_info: dict = Depends(get_use
         apply_session_variables_with_engine(engine, user, fleet_id)
         db = SQLDatabase(engine=engine)
         apply_session_variables_with_sql_database(db, user, fleet_id)
-        print("db inited")
 
-        # Stream LLM agent response
+        # Run LLM agent
         agent = await build_agent(db, llm)
         print("agent inited")
         steps = []
