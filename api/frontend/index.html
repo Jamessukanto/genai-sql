@@ -49,8 +49,19 @@
           body: JSON.stringify({ query, fleet_id: fleetId }) 
         });
 
+// curl -X POST http://localhost:8000/chat/execute_user_query \
+//   -H "Content-Type: application/json" \
+//   -H "Authorization: Bearer $(cat api/scripts/token.txt)" \
+//   -d '{"query":"How many SRM T3 EVs are in my fleet?"}'
+
+
+
         if (!chatResponse.ok) {
           throw new Error('Failed to fetch chat response');
+        }
+        if (!chatResponse.ok) {
+          const errorDetails = await chatResponse.text();
+          throw new Error(`Failed to fetch chat response. Status: ${chatResponse.status}, Details: ${errorDetails}`);
         }
 
         const responseData = await chatResponse.json();
