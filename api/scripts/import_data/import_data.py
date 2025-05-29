@@ -97,7 +97,9 @@ async def main(drop_existing: bool, csv_dir: str, existing_db: Database = None):
             
         await create_tables(drop_existing)
         await load_data_from_csv_dir(csv_dir)
-        await setup_users_and_permissions(db, "fleetdb")
+        # await setup_users_and_permissions(db, "fleetdb")
+        await setup_users_and_permissions(db, "fleetdb_6eqj")
+        
     finally:
         if not existing_db:
             await db.disconnect()
