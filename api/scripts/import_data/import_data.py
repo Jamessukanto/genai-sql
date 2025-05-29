@@ -3,7 +3,7 @@ from urllib.parse import urlparse, urlunparse
 import os, csv, argparse, asyncio
 from databases import Database
 from sqlalchemy import text
-from dotenv import load_dotenv
+
 
 from scripts.import_data.table_queries import CREATE_TABLE_QUERIES, PARTITIONED_TABLES
 from scripts.import_data.setup_user import setup_users_and_permissions
@@ -111,24 +111,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    # # Load environment variables
-    # env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.env"))
-    # load_dotenv(env_path, override=True)
-    # db_url = os.getenv("DATABASE_URL")
-
-    # # Adjust the database URL for local development
-    # db_url = urlparse(db_url)
-    # if db_url.hostname == "db":
-    #     db_url = db_url._replace(netloc=db_url.netloc.replace("db", "localhost"))
-    # db_url = urlunparse(db_url)
-    # print(f"Adjusted database URL: {db_url}\n\n")
-
     db_url = os.getenv("DATABASE_URL")
-
-    # For local debugging
-    if not db_url:
-        db_url = "postgresql://postgres:password@localhost:5432/fleetdb"
-
     db = Database(db_url)
 
     asyncio.run(

@@ -27,6 +27,7 @@ async def generate_jwt_token(
     """
     try:
         print("generate_jwt_token endpoint!")
+
         payload = {
             "sub": sub,
             "fleet_id": fleet_id,
