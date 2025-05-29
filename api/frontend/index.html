@@ -37,7 +37,7 @@
         if (!tokenResponse.ok) {
           throw new Error('Failed to generate token');
         }
-
+        print(token)
         const { token } = await tokenResponse.json();
 
         // Send Query to Backend with Token
