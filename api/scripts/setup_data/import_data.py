@@ -6,7 +6,7 @@ from typing import Set
 from databases import Database
 from sqlalchemy import text
 
-from scripts.import_data.table_queries import CREATE_TABLE_QUERIES, PARTITIONED_TABLES
+from scripts.setup_data.table_queries import CREATE_TABLE_QUERIES, PARTITIONED_TABLES
 
 
 async def create_vehicle_partition(db: Database, vehicle_id: str, table: str) -> None:
