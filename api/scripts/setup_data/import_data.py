@@ -2,7 +2,7 @@ import os
 import csv
 import argparse
 import asyncio
-from typing import Set
+from typing import Set, List, Dict, Any
 from databases import Database
 from sqlalchemy import text
 
@@ -35,8 +35,53 @@ def get_vehicle_ids_from_csv(csv_path: str) -> Set[str]:
         raise RuntimeError(f"Failed to read vehicle IDs from {csv_path}: {e}")
 
 
+def read_csv_data(csv_path: str) -> tuple[List[str], List[Dict[str, Any]]]:
+    """Read CSV file and return column names and data rows."""
+    try:
+        with open(csv_path, 'r') as file:
+            reader = csv.DictReader(file)
+            columns = reader.fieldnames or []
+            rows = [row for row in reader]
+            return columns, rows
+    except Exception as e:
+        raise RuntimeError(f"Failed to read CSV file {csv_path}: {e}")
+
+
+def create_insert_query(table: str, columns: List[str], rows: List[Dict[str, Any]], batch_size: int = 1000) -> List[str]:
+    """Create INSERT statements for the data, batching for better performance."""
+    queries = []
+    
+    for i in range(0, len(rows), batch_size):
+        batch = rows[i:i + batch_size]
+        values_list = []
+        
+        for row in batch:
+            # Handle NULL values and escape strings
+            values = []
+            for col in columns:
+                val = row.get(col, '')
+                if val == '':
+                    values.append('NULL')
+                elif isinstance(val, (int, float)):
+                    values.append(str(val))
+                else:
+                    # Escape single quotes and properly quote string values
+                    val = str(val).replace("'", "''")
+                    values.append(f"'{val}'")
+            
+            values_list.append(f"({', '.join(values)})")
+        
+        query = f"""
+            INSERT INTO {table} ({', '.join(columns)})
+            VALUES {', '.join(values_list)};
+        """
+        queries.append(query)
+    
+    return queries
+
+
 async def load_table_data(db: Database, table: str, csv_path: str) -> None:
-    """Load data into a table from a CSV file, handling partitioning if needed."""
+    """Load data into a table from a CSV file using INSERT statements."""
     try:
         if table in PARTITIONED_TABLES:
             vehicle_ids = get_vehicle_ids_from_csv(csv_path)
@@ -45,7 +90,17 @@ async def load_table_data(db: Database, table: str, csv_path: str) -> None:
         else:
             await db.execute(text(f'TRUNCATE TABLE {table} CASCADE'))
         
-        await db.execute(text(f"COPY {table} FROM '{csv_path}' WITH (FORMAT csv, HEADER true)"))
+        # Read CSV data
+        columns, rows = read_csv_data(csv_path)
+        if not rows:
+            print(f"Warning: No data to import for table {table}")
+            return
+
+        # Create and execute INSERT statements in batches
+        queries = create_insert_query(table, columns, rows)
+        for query in queries:
+            await db.execute(text(query))
+            
     except Exception as e:
         raise RuntimeError(f"Failed to load data into table {table}: {e}")
 
