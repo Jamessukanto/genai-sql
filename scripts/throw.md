@@ -1,33 +1,35 @@
-cd /Users/jamessukanto/Desktop/codes/projs/genai/sql
+# LOCAL
+uvicorn main:app --host 0.0.0.0 --port 8000
+curl http://localhost:8000/ping
 
-docker-compose down && docker-compose up --build -d && \
+# CREATE DB
+psql -h localhost -U postgres -d fleetdb  
+CREATE DATABASE fleetdb;
+
+# IMPORT
 python -m scripts.import_data.import_data --csv-dir ./data --drop-existing
 
-curl http://localhost:8000/ping
-docker-compose logs --tail=30 api
 
+# CHECK RLS
+# psql
+SET app.fleet_id = '1'; SELECT * FROM vehicles;
+# Curl
+python -m scripts.generate_jwt_token --sub end_user --fleet_id 1 --out_token scripts/token.txt && \
 
-# import data to container
-docker-compose run --rm api python import_data.py --init
-docker-compose run --rm api python import_data.py --load-all
-
-
-# Check RLS, curl as end_user
-docker-compose down && docker-compose up --build -d && \
-python generate_jwt_token.py --sub end_user --fleet_id 1 --out_token token.txt && \
 curl -X POST http://localhost:8000/sql/execute_sql \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $(cat token.txt)" \
+  -H "Authorization: Bearer $(cat scripts/token.txt)" \
   -d '{"sql":"SELECT COUNT(*) FROM vehicles;"}'
 
 
-# Check LLM, curl as end_user
-docker-compose down && docker-compose up --build -d && \
-python generate_jwt_token.py --sub postgres --fleet_id 2 --out_token token.txt && \
-curl -X POST http://localhost:8000/chat \
+
+# CHECK CHAT
+python -m scripts.generate_jwt_token --sub end_user --fleet_id 2 --out_token scripts/token.txt && \
+curl -X POST http://localhost:8000/chat/execute_user_query \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $(cat token.txt)" \
-  -d '{"query":"What is the SOC of vehicle GBM6296G right now?"}'
+  -H "Authorization: Bearer $(cat scripts/token.txt)" \
+  -d '{"query":"How many SRM T3 EVs are in my fleet?"}'
+
 
 "How many SRM T3 EVs are in my fleet?"
 "What is the SOC of vehicle GBM6296G right now?"
@@ -39,21 +41,28 @@ curl -X POST http://localhost:8000/chat \
 are the most-used & least-used vehicles?"
 
 
-####################### psql #######################
 
+
+# CONTAINER
+docker-compose down && docker-compose up --build -d && \
+docker-compose logs --tail=222 api
+
+# Import data
+docker-compose run --rm api python import_data.py --init
+docker-compose run --rm api python import_data.py --load-all
 
 
 # Access psql
 docker-compose exec db psql -U postgres -d fleetdb
-docker-compose exec db psql -U end_user -d fleetdb
 
-# Check RLS, psql _> 3
-SET app.fleet_id = '1'; SELECT * FROM vehicles;
 
-# Grant attrs to end_user
-GRANT CONNECT ON DATABASE fleetdb TO end_user; GRANT USAGE ON SCHEMA public TO end_user; GRANT SELECT ON ALL TABLES IN SCHEMA public TO end_user;
--- Grant SELECT on future tables created in the schema
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO end_user;
+
+
+
+
+
+
+
 
 
 

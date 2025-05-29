@@ -1,27 +1,15 @@
 import os
-from typing import Optional
-from pydantic import BaseModel
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from db import database
 from services.sql_service import sql_router
-from services.chat_service import chat_router
-from services.auth_service import generate_jwt_token
+from services.chat_service.chat_service import chat_router
+
 
 app = FastAPI()
 app.include_router(sql_router)
 app.include_router(chat_router)
-
-
-class ChatRequest(BaseModel):
-    query: str
-    fleet_id: int
-
-class TokenRequest(BaseModel):
-    sub: str
-    fleet_id: int
-
 
 @app.on_event("startup")
 async def on_startup():
@@ -34,11 +22,6 @@ async def on_shutdown():
 @app.get("/ping")
 async def ping():
     return {"status": "ok"}
-
-@app.post("/generate_jwt_token")
-async def generate_jwt_token_endpoint(req: TokenRequest):
-    token = generate_jwt_token(req.sub, req.fleet_id)
-    return {"token": token}
 
 
 # Serve minimal frontend 

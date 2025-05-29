@@ -18,7 +18,7 @@ def generate_token(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Generate JWT token for fleet management')
     parser.add_argument('--sub', default='end_user', help='User identifier, default: end_user')
-    parser.add_argument('--fleet_id', default='1', help='Fleet ID, default: 2')
+    parser.add_argument('--fleet_id', default='1', help='Fleet ID')
     parser.add_argument("--exp_hours", type=int, default=1)
     parser.add_argument('-o', '--out_token', default='token.txt', help='Output file to save the token, default: token.txt')
     
