@@ -7,7 +7,7 @@ from langgraph.graph import START, MessagesState, StateGraph
 from langgraph.prebuilt import ToolNode
 from langchain_community.agent_toolkits import SQLDatabaseToolkit
 
-from llm.nodes import (
+from app.llm.nodes import (
     ListTablesNode,
     CallGetSchemaNode,
     GenerateQueryNode,
@@ -16,7 +16,6 @@ from llm.nodes import (
 )
 
 
-# def create_agent(db: SQLDatabase) -> StateGraph:
 async def build_agent(db, llm) -> StateGraph:
     """
     Build an SQL agent with langgraph.

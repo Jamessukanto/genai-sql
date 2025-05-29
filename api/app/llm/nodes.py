@@ -3,8 +3,8 @@ from langchain_core.messages import AIMessage
 from langgraph.graph import MessagesState, END
 from langchain_community.utilities import SQLDatabase
 
-from llm.prompts import generate_query_prompt, check_query_prompt
-from llm.llm_utils import load_semantic_map
+from app.llm.prompts import generate_query_prompt, check_query_prompt
+from app.llm.llm_utils import load_semantic_map
 
 
 class ListTablesNode:
