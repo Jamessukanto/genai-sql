@@ -33,7 +33,7 @@ async def generate_jwt_token(
             "exp": datetime.utcnow() + timedelta(hours=exp_hours)
         }
         token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
-        return token
+        return {"token": token}
     
     except Exception as e:
         raise HTTPException(
