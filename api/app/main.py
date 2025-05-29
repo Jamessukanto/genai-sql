@@ -29,7 +29,7 @@ app.include_router(auth_router, prefix="/api")
 
 @app.on_event("startup")
 async def on_startup():
-    # try:
+    try:
     #     # Create SSL context that accepts self-signed certs
     #     ssl_context = ssl.create_default_context()
     #     ssl_context.check_hostname = False
