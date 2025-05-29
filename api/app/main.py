@@ -26,12 +26,12 @@ async def ping():
 
 # Serve minimal frontend 
 # frontend_path = os.path.join(os.path.dirname(__file__), "frontend")
-frontend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "frontend"))
-
+# frontend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "frontend"))
+frontend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../frontend"))
 if os.path.isdir(frontend_path):
-    app.mount("/ui", StaticFiles(directory=frontend_path, html=True), name="frontend")
+    app.mount("/", StaticFiles(directory=frontend_path, html=True), name="frontend")
 else:
-    print("Warning: 'frontend' directory not found. Static files will not be served.")
+    print("Warning: 'frontend' directory not found. Static files will not be served. front_end path: {frontend_path}")
 
 
 
