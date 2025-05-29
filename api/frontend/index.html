@@ -37,8 +37,9 @@
         if (!tokenResponse.ok) {
           throw new Error('Failed to generate token');
         }
-        print(token)
+
         const { token } = await tokenResponse.json();
+        console.log(token);
 
         // Send Query to Backend with Token
         const chatResponse = await fetch(`${backendUrl}/chat/execute_user_query`, {
