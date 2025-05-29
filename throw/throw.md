@@ -24,11 +24,12 @@ curl -X POST http://localhost:8000/sql/execute_sql \
 
 
 # CHECK CHAT
-python -m scripts.generate_jwt_token --sub end_user --fleet_id 2 --out_token scripts/token.txt && \
+python -m api.scripts.generate_jwt_token --sub end_user --fleet_id 2 --out_token api/scripts/token.txt && \
 curl -X POST http://localhost:8000/chat/execute_user_query \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $(cat scripts/token.txt)" \
+  -H "Authorization: Bearer $(cat api/scripts/token.txt)" \
   -d '{"query":"How many SRM T3 EVs are in my fleet?"}'
+
 
 
 "How many SRM T3 EVs are in my fleet?"

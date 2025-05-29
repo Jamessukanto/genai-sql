@@ -3,8 +3,8 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from db import database
-from services.sql_service import sql_router
-from services.chat_service.chat_service import chat_router
+from app.services.sql_service import sql_router
+from app.services.chat_service.chat_service import chat_router
 
 
 app = FastAPI()
@@ -25,7 +25,9 @@ async def ping():
 
 
 # Serve minimal frontend 
-frontend_path = os.path.join(os.path.dirname(__file__), "frontend")
+# frontend_path = os.path.join(os.path.dirname(__file__), "frontend")
+frontend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "frontend"))
+
 if os.path.isdir(frontend_path):
     app.mount("/ui", StaticFiles(directory=frontend_path, html=True), name="frontend")
 else:

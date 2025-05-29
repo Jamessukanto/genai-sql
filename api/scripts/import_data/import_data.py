@@ -100,7 +100,7 @@ if __name__ == "__main__":
         description="Create database; import data; set up users.")
     parser.add_argument(
         "--csv-dir", 
-        default="/data", 
+        default="/api/data", 
         help="Directory containing CSV files"
     )
     parser.add_argument(
@@ -129,10 +129,6 @@ if __name__ == "__main__":
     if not db_url:
         db_url = "postgresql://postgres:password@localhost:5432/fleetdb"
 
-
-    print()
-    print(db_url)
-    print()
     db = Database(db_url)
 
     asyncio.run(

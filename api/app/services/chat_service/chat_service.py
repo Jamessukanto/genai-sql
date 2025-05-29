@@ -5,9 +5,9 @@ from langchain.chat_models import init_chat_model
 from langchain_community.utilities import SQLDatabase
 
 from db import engine
-from llm.agent import build_agent
-from services.auth_service import get_user_info
-from services.chat_service.chat_service_utils import (
+from app.llm.agent import build_agent
+from app.services.auth_service import get_user_info
+from app.services.chat_service.chat_service_utils import (
     apply_session_variables_with_engine,
     apply_session_variables_with_sql_database,
 )

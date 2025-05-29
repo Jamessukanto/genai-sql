@@ -1,5 +1,4 @@
 import base64, json
-# import subprocess
 from fastapi import HTTPException, Header
 
 
@@ -31,26 +30,3 @@ async def get_user_info(authorization: str = Header(...)) -> dict:
     except Exception as e:
         raise HTTPException(status_code=401, detail=f"Invalid token: {e}")
 
-
-# def generate_jwt_token(sub: str, fleet_id: int) -> str:
-#     """Generate a JWT token by running an external script."""
-#     try:
-#         # Run the external script to generate the token
-#         result = subprocess.run(
-#             [
-#                 "python", "scripts/generate_jwt_token.py",
-#                 "--sub", sub,
-#                 "--fleet_id", str(fleet_id),
-#                 "--out_token", "scripts/token.txt"
-#             ],
-#             check=True,
-#             capture_output=True,
-#             text=True
-#         )
-#         # Read the generated token from the output file
-#         with open("scripts/token.txt", "r") as token_file:
-#             token = token_file.read().strip()
-#         return token
-#     except subprocess.CalledProcessError as e:
-#         # Raise an HTTPException if the subprocess fails
-#         raise HTTPException(status_code=500, detail=f"Token generation failed: {e.stderr}")
