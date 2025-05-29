@@ -13,14 +13,14 @@ from app.services.auth_service.auth_service import auth_router
 
 app = FastAPI()
 
-# Enable CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with specific origins
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# # Enable CORS
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=["*"],  # In production, replace with specific origins
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
 
 # API routes under /api prefix
 app.include_router(sql_router, prefix="/api")
@@ -29,57 +29,27 @@ app.include_router(auth_router, prefix="/api")
 
 @app.on_event("startup")
 async def on_startup():
-    try:
-        # Create SSL context that accepts self-signed certs
-        ssl_context = ssl.create_default_context()
-        ssl_context.check_hostname = False
-        ssl_context.verify_mode = ssl.CERT_NONE
+    # try:
+    #     # Create SSL context that accepts self-signed certs
+    #     ssl_context = ssl.create_default_context()
+    #     ssl_context.check_hostname = False
+    #     ssl_context.verify_mode = ssl.CERT_NONE
         
-        # Update database SSL context
-        database.url = database.url.replace("postgresql://", "postgresql+asyncpg://")
-        database._backend.ssl = ssl_context
+    #     # Update database SSL context
+    #     database.url = database.url.replace("postgresql://", "postgresql+asyncpg://")
+    #     database._backend.ssl = ssl_context
         
         await database.connect()
-        # Test the connection
-        async with database.connection() as conn:
-            await conn.fetch("SELECT 1")
-        print("Database connection established successfully")
+
     except Exception as e:
         print(f"Failed to connect to database: {e}")
         raise
 
 @app.on_event("shutdown")
 async def on_shutdown():
-    try:
-        await database.disconnect()
-        print("Database connection closed")
-    except Exception as e:
-        print(f"Error during shutdown: {e}")
+    await database.disconnect()
 
-@app.get("/api/health")
-async def health_check():
-    """Comprehensive health check endpoint."""
-    try:
-        # Test database connection
-        async with database.connection() as conn:
-            await conn.fetch("SELECT 1")
-        
-        return {
-            "status": "healthy",
-            "database": "connected",
-            "details": {
-                "database_host": str(engine.url.host),
-                "database_name": str(engine.url.database)
-            }
-        }
-    except Exception as e:
-        return JSONResponse(
-            status_code=503,
-            content={
-                "status": "unhealthy",
-                "error": str(e)
-            }
-        )
+
 
 @app.get("/api/ping")
 async def ping():
