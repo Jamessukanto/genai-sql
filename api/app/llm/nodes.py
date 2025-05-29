@@ -20,6 +20,8 @@ class ListTablesNode:
         }
         tool_call_message = AIMessage(content="", tool_calls=[tool_call])
         tool_message = self.list_tables_tool.invoke(tool_call)
+        print(tool_call_message)
+        print(tool_message)
         return {"messages": [tool_call_message, tool_message]}
 
 class CallGetSchemaNode:
