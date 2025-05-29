@@ -31,31 +31,18 @@ async def execute_user_query(req: ChatRequest, user_info: dict = Depends(get_use
         # Set up LLM
         llm = init_chat_model(model="mistral-medium-latest", temperature=0)
 
-        # # Debug database connection
-        # print("\n=== Database Connection Debug ===")
-        # print(f"Database URL: {engine.url}")
-        # try:
-        #     # Test database connection
-        #     with engine.connect() as conn:
-        #         result = conn.execute("SELECT 1").scalar()
-        #         print(f"Database connection test: {result == 1}")
-        # except Exception as db_err:
-        #     print(f"Database connection error: {str(db_err)}")
-        #     raise HTTPException(status_code=500, detail=f"Database connection failed: {str(db_err)}")
-
         # Set up sql database and session variables
         print("\n=== Setting up session variables ===")
         try:
             apply_session_variables_with_engine(engine, user, fleet_id)
-            print("Session variables applied to engine")
-            
             db = SQLDatabase(engine=engine)
             apply_session_variables_with_sql_database(db, user, fleet_id)
             print("Session variables applied to SQLDatabase")
             
             # Test if session variables are set
             with engine.connect() as conn:
-                result = conn.execute("SHOW ALL").fetchall()
+                from sqlalchemy import text
+                result = conn.execute(text("SHOW ALL")).fetchall()
                 print("\nCurrent PostgreSQL session variables:")
                 for row in result:
                     if 'app.' in str(row[0]):
