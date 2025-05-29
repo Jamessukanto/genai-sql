@@ -5,6 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from dotenv import load_dotenv
 from urllib.parse import urlparse, parse_qs, urlunparse, urlencode
+from typing import Optional
 
 # load_dotenv(override=True)
 
@@ -45,15 +46,32 @@ def get_ssl_context():
     ctx.verify_mode = ssl.CERT_NONE
     return ctx
 
+def create_database_connection(url: Optional[str] = None, **kwargs) -> Database:
+    """
+    Create a database connection with consistent SSL configuration.
+    
+    Args:
+        url: Optional database URL. If not provided, uses DATABASE_URL from environment
+        **kwargs: Additional arguments to pass to Database constructor
+    
+    Returns:
+        Database: Configured database connection
+    """
+    db_url = url or get_database_url()
+    ssl_context = get_ssl_context()
+    
+    return Database(
+        db_url,
+        min_size=1,
+        max_size=4,
+        ssl=ssl_context,
+        **kwargs
+    )
+
 # Initialize database connection
 DATABASE_URL = get_database_url()
 engine: Engine = create_engine(DATABASE_URL)
 
 # Configure database with SSL settings
-database = Database(
-    DATABASE_URL,
-    min_size=1,
-    max_size=4,
-    ssl=get_ssl_context()  # Use our custom SSL context
-)
+database = create_database_connection(DATABASE_URL)
 

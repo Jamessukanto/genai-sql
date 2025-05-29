@@ -7,6 +7,7 @@ from typing import Optional
 
 from scripts.setup_data.table_queries import CREATE_TABLE_QUERIES
 from scripts.setup_data.setup_user import setup_users_and_permissions
+from db import create_database_connection
 
 
 async def verify_db_connection(db: Database) -> None:
@@ -76,10 +77,7 @@ async def main(
         # Initialize database connection
         db = existing_db
         if not db:
-            db_url = os.getenv("DATABASE_URL")
-            if not db_url:
-                raise RuntimeError("DATABASE_URL environment variable is required")
-            db = Database(db_url, ssl=True)
+            db = create_database_connection()
             await db.connect()
 
         # Verify connection

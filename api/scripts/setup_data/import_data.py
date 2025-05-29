@@ -7,6 +7,7 @@ from databases import Database
 from sqlalchemy import text
 
 from scripts.setup_data.table_queries import PARTITIONED_TABLES
+from db import create_database_connection
 
 
 async def create_vehicle_partition(db: Database, vehicle_id: str, table: str) -> None:
@@ -76,10 +77,7 @@ async def main(csv_dir: str, existing_db: Database = None) -> None:
         # Initialize database connection
         db = existing_db
         if not db:
-            db_url = os.getenv("DATABASE_URL")
-            if not db_url:
-                raise RuntimeError("DATABASE_URL environment variable is required")
-            db = Database(db_url, ssl=True)
+            db = create_database_connection()
             await db.connect()
 
         # Import data
