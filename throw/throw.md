@@ -1,3 +1,11 @@
+
+curl -X POST https://genai-sql-1.onrender.com/sql/import_data
+
+
+
+
+
+
 # LOCAL
 uvicorn app.main:app --host 0.0.0.0 --port 8000
 curl http://localhost:8000/ping
