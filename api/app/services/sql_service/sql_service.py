@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from urllib.parse import urlparse
 
 from db import database, engine
-from scripts.import_data.import_data import main as import_data_main
+from scripts.setup_data.setup_database import main as setup_database_main
 from app.services.service_utils import get_user_info
 
 
@@ -14,11 +14,9 @@ class SQLRequest(BaseModel):
     sql: str
 
 
-@sql_router.post("/execute_sql")
+@sql_router.post("/execute")
 async def execute_sql(req: SQLRequest, user_info: dict = Depends(get_user_info)):
     """Executes a SQL query with role and fleet context applied, returning query results."""
-
-    print("Executing SQL.\n")
     user = user_info["user"]
     fleet_id = user_info["fleet_id"]
 
@@ -32,43 +30,65 @@ async def execute_sql(req: SQLRequest, user_info: dict = Depends(get_user_info))
             # Execute the SQL query
             rows = await con.fetch_all(req.sql.strip())
 
-        return {"rows": [dict(r) for r in rows]}
+        return {"status": "success", "rows": [dict(r) for r in rows]}
 
     except Exception as e:
         raise HTTPException(
-            status_code=400, detail=f"Failed to execute SQL: {e}"
+            status_code=400, 
+            detail={
+                "status": "error",
+                "message": f"Failed to execute SQL: {str(e)}"
+            }
         )
 
-@sql_router.post("/import_data")
-async def import_data():
+
+@sql_router.post("/setup")
+async def setup_database():
     """
     Import CSV data into the database.
-
     Note: This is a programmatic alternative to pgAdmin service and 
           shell access on Render (not available for free tier).
     """
     try:
         # Get the absolute path to the data directory
-        data_dir = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
-            "data"
+        data_dir = os.path.abspath(
+            os.path.join(
+                os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
+                "data"
+            )
         )
         if not os.path.exists(data_dir):
             raise HTTPException(
-                status_code=400, detail=f"Data directory not found at {data_dir}"
+                status_code=400, 
+                detail={
+                    "status": "error",
+                    "message": f"Data directory not found at {data_dir}"
+                }
             )
-        
+
         # Extract database name from DATABASE_URL
         db_url = str(engine.url)
         db_name = urlparse(db_url).path.strip('/')
-            
-        print(f"Starting data import from {data_dir}, using database '{db_name}")
-        await import_data_main(drop_existing=True, csv_dir=data_dir, db_name=db_name)
-        return {"status": "success", "message": "Data imported successfully"}
+
+        print(f"Setting up database '{db_name}'. CSV dir: {data_dir}")
+        await setup_database_main(drop_existing=True, csv_dir=data_dir, db_name=db_name)
+        
+        return {
+            "status": "success",
+            "message": "Database setup completed successfully",
+            "details": {
+                "database": db_name,
+                "data_directory": data_dir
+            }
+        }
 
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Failed to import data: {e}"
+            status_code=500, 
+            detail={
+                "status": "error",
+                "message": f"Failed to set up database: {str(e)}"
+            }
         )
 
 

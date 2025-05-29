@@ -1,5 +1,5 @@
 
-curl -X POST https://genai-sql-1.onrender.com/sql/import_data
+curl -X POST https://genai-sql-1.onrender.com/sql/setup_database
 
 
 
