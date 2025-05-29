@@ -80,7 +80,7 @@ async def load_data_from_csv_dir(csv_dir: str):
         print(f"Error loading data for {csv_dir}: {e}")
 
 
-async def main(drop_existing: bool, csv_dir: str, existing_db: Database = None):
+async def main(drop_existing: bool, csv_dir: str, existing_db: Database = None, db_name: str = None):
     csv_dir = os.path.abspath(csv_dir)
 
     if not os.path.isdir(csv_dir):
@@ -97,9 +97,13 @@ async def main(drop_existing: bool, csv_dir: str, existing_db: Database = None):
             
         await create_tables(drop_existing)
         await load_data_from_csv_dir(csv_dir)
-        # await setup_users_and_permissions(db, "fleetdb")
-        await setup_users_and_permissions(db, "fleetdb_6eqj")
+
         
+        # Use provided database name or default to fleetdb
+        db_name = db_name or "fleetdb" # "fleetdb_6eqj"
+        print(f"Setting up users and permissions for database: {db_name}")
+        await setup_users_and_permissions(db, db_name)
+
     finally:
         if not existing_db:
             await db.disconnect()
@@ -119,10 +123,14 @@ if __name__ == "__main__":
         dest="drop_existing", 
         help="Drop existing tables, default: False"
     )
+    parser.add_argument(
+        "--db-name",
+        help="Database name to use"
+    )
     args = parser.parse_args()
 
     asyncio.run(
-        main(args.drop_existing, args.csv_dir)
+        main(args.drop_existing, args.csv_dir, db_name=args.db_name)
     )
 
 

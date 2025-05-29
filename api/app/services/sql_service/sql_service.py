@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from scripts.import_data.import_data import main as import_data_main
 import os
+from urllib.parse import urlparse
 
-from db import database
+from db import database, engine
 from app.services.service_utils import get_user_info
 
 sql_router = APIRouter(prefix="/sql")
@@ -43,9 +44,14 @@ async def import_data():
         
         if not os.path.exists(data_dir):
             raise HTTPException(status_code=400, detail=f"Data directory not found at {data_dir}")
+        
+        # Extract database name from DATABASE_URL
+        db_url = str(engine.url)
+        db_name = urlparse(db_url).path.strip('/')
+        print(f"Using database: {db_name}")
             
         print(f"Starting data import from {data_dir}")
-        await import_data_main(drop_existing=True, csv_dir=data_dir)
+        await import_data_main(drop_existing=True, csv_dir=data_dir, db_name=db_name)
         return {"status": "success", "message": "Data imported successfully"}
     except Exception as e:
         print(f"Error during data import: {str(e)}")
