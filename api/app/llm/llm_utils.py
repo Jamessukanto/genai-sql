@@ -1,6 +1,8 @@
 import os, yaml
 
 def load_semantic_map():
+    """Loads and formats semantic term mappings from a YAML."""
+
     file_path = os.path.join(os.path.dirname(__file__), "semantic_map.yaml")
     with open(file_path) as f:
         m = yaml.safe_load(f)
