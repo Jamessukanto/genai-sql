@@ -80,19 +80,27 @@ async def load_data_from_csv_dir(csv_dir: str):
         print(f"Error loading data for {csv_dir}: {e}")
 
 
-async def main(drop_existing: bool, csv_dir: str):
+async def main(drop_existing: bool, csv_dir: str, existing_db: Database = None):
     csv_dir = os.path.abspath(csv_dir)
 
     if not os.path.isdir(csv_dir):
         raise ValueError(f"CSV directory does not exist: {csv_dir}")
 
     try:
-        await db.connect()
+        global db
+        if existing_db:
+            db = existing_db
+        else:
+            db_url = os.getenv("DATABASE_URL")
+            db = Database(db_url)
+            await db.connect()
+            
         await create_tables(drop_existing)
         await load_data_from_csv_dir(csv_dir)
         await setup_users_and_permissions(db, "fleetdb")
     finally:
-        await db.disconnect()
+        if not existing_db:
+            await db.disconnect()
 
 
 if __name__ == "__main__":
@@ -110,9 +118,6 @@ if __name__ == "__main__":
         help="Drop existing tables, default: False"
     )
     args = parser.parse_args()
-
-    db_url = os.getenv("DATABASE_URL")
-    db = Database(db_url)
 
     asyncio.run(
         main(args.drop_existing, args.csv_dir)
