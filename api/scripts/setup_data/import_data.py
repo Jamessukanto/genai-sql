@@ -80,32 +80,23 @@ def create_insert_query(table: str, columns: List[str], rows: List[Dict[str, Any
     return queries
 
 
-async def disable_rls_for_table(db: Database, table: str) -> None:
-    """Temporarily disable RLS for a table."""
-    try:
-        await db.execute(text(f"ALTER TABLE {table} DISABLE ROW LEVEL SECURITY;"))
-    except Exception as e:
-        print(f"Warning: Failed to disable RLS for table {table}: {e}")
-
-
-async def enable_rls_for_table(db: Database, table: str) -> None:
-    """Re-enable RLS for a table."""
-    try:
-        await db.execute(text(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY;"))
-        await db.execute(text(f"ALTER TABLE {table} FORCE ROW LEVEL SECURITY;"))
-    except Exception as e:
-        print(f"Warning: Failed to re-enable RLS for table {table}: {e}")
-
-
 async def setup_import_context(db: Database) -> None:
     """Set up the database context for importing data."""
     try:
-        # Set role to postgres (or a role with necessary privileges)
-        await db.execute(text("SET ROLE postgres;"))
-        # Optionally set other session variables if needed
+        # Set role to superuser and bypass RLS
+        await db.execute(text("SET ROLE superuser;"))
+        await db.execute(text("SET session_replication_role = 'replica';"))  # Bypass triggers and RLS
         await db.execute(text("SET statement_timeout = 0;"))  # No timeout for bulk imports
     except Exception as e:
         raise RuntimeError(f"Failed to set up import context: {e}")
+
+
+async def restore_normal_context(db: Database) -> None:
+    """Restore normal database context after import."""
+    try:
+        await db.execute(text("SET session_replication_role = 'origin';"))  # Restore normal operation
+    except Exception as e:
+        print(f"Warning: Failed to restore normal context: {e}")
 
 
 async def load_table_data(db: Database, table: str, csv_path: str) -> None:
@@ -116,9 +107,8 @@ async def load_table_data(db: Database, table: str, csv_path: str) -> None:
             for vehicle_id in vehicle_ids:
                 await create_vehicle_partition(db, vehicle_id, table)
         
-        # Temporarily disable RLS and set up import context
+        # Set up import context to bypass RLS
         await setup_import_context(db)
-        await disable_rls_for_table(db, table)
         
         try:
             await db.execute(text(f'TRUNCATE TABLE {table} CASCADE'))
@@ -135,8 +125,8 @@ async def load_table_data(db: Database, table: str, csv_path: str) -> None:
                 await db.execute(text(query))
                 
         finally:
-            # Always re-enable RLS after import
-            await enable_rls_for_table(db, table)
+            # Always restore normal context after import
+            await restore_normal_context(db)
             
     except Exception as e:
         raise RuntimeError(f"Failed to load data into table {table}: {e}")
