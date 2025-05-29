@@ -17,9 +17,12 @@ async def create_superuser(db: Database) -> None:
     if not await check_role_exists(db, "superuser"):
         await db.execute("""
             CREATE ROLE superuser 
-            WITH SUPERUSER CREATEDB CREATEROLE LOGIN 
+            WITH SUPERUSER CREATEDB CREATEROLE BYPASSRLS LOGIN 
             PASSWORD 'password';
         """)
+    else:
+        # Update existing superuser role to ensure it has BYPASSRLS
+        await db.execute("ALTER ROLE superuser WITH BYPASSRLS;")
 
 
 async def create_end_user(db: Database) -> None:
@@ -49,7 +52,7 @@ async def grant_permissions(db: Database, db_name: str) -> None:
 async def setup_users_and_permissions(db: Database, db_name: str = "fleetdb") -> None:
     """
     Set up database users and their permissions. Creates two roles:
-    - superuser: Has full database access
+    - superuser: Has full database access with BYPASSRLS
     - end_user: Has read-only access to all tables
     """
     try:

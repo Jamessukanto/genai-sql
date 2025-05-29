@@ -5,7 +5,6 @@ import asyncio
 from typing import Set, List, Dict, Any
 from databases import Database
 from sqlalchemy import text
-import json
 
 from scripts.setup_data.table_queries import PARTITIONED_TABLES
 from db import create_database_connection
@@ -81,35 +80,10 @@ def create_insert_query(table: str, columns: List[str], rows: List[Dict[str, Any
     return queries
 
 
-async def create_import_function(db: Database, table: str) -> None:
-    """Create a security definer function to bypass RLS for data import."""
-    function_name = f"import_data_{table}"
-    try:
-        # Drop existing function if it exists
-        await db.execute(text(f"DROP FUNCTION IF EXISTS {function_name}(jsonb);"))
-        
-        # Create new function
-        query = f"""
-        CREATE OR REPLACE FUNCTION {function_name}(data jsonb)
-        RETURNS void
-        LANGUAGE plpgsql
-        SECURITY DEFINER
-        SET search_path = public
-        AS $$
-        BEGIN
-            INSERT INTO {table}
-            SELECT * FROM jsonb_populate_recordset(null::{table}, data);
-        END;
-        $$;
-        """
-        await db.execute(text(query))
-    except Exception as e:
-        raise RuntimeError(f"Failed to create import function for table {table}: {e}")
-
-
 async def setup_import_context(db: Database) -> None:
     """Set up the database context for importing data."""
     try:
+        # Set role to superuser which has BYPASSRLS privilege
         await db.execute(text("SET ROLE superuser;"))
         await db.execute(text("SET statement_timeout = 0;"))  # No timeout for bulk imports
     except Exception as e:
@@ -117,7 +91,7 @@ async def setup_import_context(db: Database) -> None:
 
 
 async def load_table_data(db: Database, table: str, csv_path: str) -> None:
-    """Load data into a table using a security definer function to bypass RLS."""
+    """Load data into a table from a CSV file."""
     try:
         if table in PARTITIONED_TABLES:
             vehicle_ids = get_vehicle_ids_from_csv(csv_path)
@@ -127,8 +101,8 @@ async def load_table_data(db: Database, table: str, csv_path: str) -> None:
         # Set up import context
         await setup_import_context(db)
         
-        # Create the import function
-        await create_import_function(db, table)
+        # Truncate the table first
+        await db.execute(text(f'TRUNCATE TABLE {table} CASCADE'))
         
         # Read CSV data
         columns, rows = read_csv_data(csv_path)
@@ -136,17 +110,10 @@ async def load_table_data(db: Database, table: str, csv_path: str) -> None:
             print(f"Warning: No data to import for table {table}")
             return
 
-        # Truncate the table first
-        await db.execute(text(f'TRUNCATE TABLE {table} CASCADE'))
-        
-        # Import data in batches using the security definer function
-        function_name = f"import_data_{table}"
-        batch_size = 1000
-        for i in range(0, len(rows), batch_size):
-            batch = rows[i:i + batch_size]
-            # Convert batch to JSON
-            json_data = f"'[{', '.join(json.dumps(row) for row in batch)}]'"
-            await db.execute(text(f"SELECT {function_name}({json_data}::jsonb);"))
+        # Import data in batches
+        queries = create_insert_query(table, columns, rows)
+        for query in queries:
+            await db.execute(text(query))
             
     except Exception as e:
         raise RuntimeError(f"Failed to load data into table {table}: {e}")
