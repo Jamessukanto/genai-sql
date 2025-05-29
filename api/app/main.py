@@ -2,7 +2,7 @@ import os
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 import ssl
 
 from db import database, engine
@@ -13,14 +13,14 @@ from app.services.auth_service.auth_service import auth_router
 
 app = FastAPI()
 
-# # Enable CORS
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["*"],  # In production, replace with specific origins
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
+# Enable CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, replace with specific origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # API routes under /api prefix
 app.include_router(sql_router, prefix="/api")
@@ -55,11 +55,14 @@ async def on_shutdown():
             status_code=500, detail=f"Failed to disconnect from database: {e}"
         )
 
+@app.get("/")
+async def root():
+    """Redirect root path to /app"""
+    return RedirectResponse(url="/app")
 
 @app.get("/api/ping")
 async def ping():
     return {"status": "ok"}
-
 
 # Serve frontend under /app path
 fe_path = os.path.abspath(

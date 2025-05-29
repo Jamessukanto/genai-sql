@@ -4,6 +4,24 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Chat Assistant</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    #response {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #f5f5f5;
+      border-radius: 4px;
+      white-space: pre-wrap;
+    }
+    .error {
+      color: red;
+    }
+  </style>
 </head>
 <body>
   <h1>Chat Assistant</h1>
@@ -19,32 +37,37 @@
   <pre id="response"></pre>
 
   <script>
+    // Get the base URL from the current window location
+    const baseUrl = window.location.origin;
+    const responseElement = document.getElementById('response');
+
     document.getElementById('submit').addEventListener('click', async () => {
       const fleetId = document.getElementById('fleet_id').value;
       const query = document.getElementById('query').value;
 
-      const backendUrl = 'https://genai-sql-1.onrender.com'; // 'http://localhost:8000/chat/execute_user_query'
-      const user = 'superuser'; // superuser
+      // const backendUrl = 'https://genai-sql-1.onrender.com'; // 'http://localhost:8000/chat/execute_user_query'
+      const user = 'superuser'; 
 
       try {
-        // Request JWT Token from Backend
-        const tokenResponse = await fetch(`${backendUrl}/api/auth/generate_jwt_token`, {
+        responseElement.textContent = 'Loading...';
+        responseElement.className = '';
+
+        // Request JWT Token
+        const tokenResponse = await fetch(`${baseUrl}/api/auth/generate_jwt_token`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ sub: user, fleet_id: fleetId })
         });
 
-        console.log({ sub: user, fleet_id: fleetId });
-
         if (!tokenResponse.ok) {
-          throw new Error('Failed to generate token');
+          const errorText = await tokenResponse.text();
+          throw new Error(`Failed to generate token: ${errorText}`);
         }
 
         const { token } = await tokenResponse.json();
-        console.log(token);
 
-        // Send Query to Backend with Token
-        const chatResponse = await fetch(`${backendUrl}/api/chat/execute_user_query`, {
+        // Send Query with Token
+        const chatResponse = await fetch(`${baseUrl}/api/chat/execute_user_query`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -53,42 +76,17 @@
           body: JSON.stringify({ query, fleet_id: fleetId }) 
         });
 
-
-    // try:
-    //     print("generate_jwt_token endpoint!")
-    //     payload = {
-    //         "sub": sub,
-    //         "fleet_id": fleet_id,
-    //         "exp": datetime.utcnow() + timedelta(hours=exp_hours)
-    //     }
-    //     token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
-    //     return token
-    
-    // except Exception as e:
-    //     raise HTTPException(
-    //         status_code=500,
-    //         detail=f"Failed to generate token: {e}"
-    //     )
-
-// curl -X POST http://localhost:8000/chat/execute_user_query \
-//   -H "Content-Type: application/json" \
-//   -H "Authorization: Bearer $(cat api/scripts/token.txt)" \
-//   -d '{"query":"How many SRM T3 EVs are in my fleet?"}'
-
-
-
         if (!chatResponse.ok) {
-          throw new Error('Failed to fetch chat response');
-        }
-        if (!chatResponse.ok) {
-          const errorDetails = await chatResponse.text();
-          throw new Error(`Failed to fetch chat response. Status: ${chatResponse.status}, Details: ${errorDetails}`);
+          const errorText = await chatResponse.text();
+          throw new Error(`Failed to fetch chat response: ${errorText}`);
         }
 
         const responseData = await chatResponse.json();
-        document.getElementById('response').textContent = JSON.stringify(responseData, null, 2);
+        responseElement.textContent = JSON.stringify(responseData, null, 2);
       } catch (error) {
-        document.getElementById('response').textContent = `Error: ${error.message}`;
+        responseElement.textContent = `Error: ${error.message}`;
+        responseElement.className = 'error';
+        console.error('Error:', error);
       }
     });
   </script>
