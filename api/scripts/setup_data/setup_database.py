@@ -55,8 +55,9 @@ async def setup_database_schema(
         print(f"Creating table '{table}'...")
         await create_table(db, table, ddl, drop_existing)
 
-    # print("existing_db:", existing_db)
+    print("existing_db:", existing_db)
     print("db_name:", db_name)
+
 
 async def main(
     drop_existing: bool = False,

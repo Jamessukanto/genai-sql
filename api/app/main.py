@@ -3,6 +3,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+import ssl
 
 from db import database, engine
 from app.services.sql_service.sql_service import sql_router
@@ -29,6 +30,15 @@ app.include_router(auth_router, prefix="/api")
 @app.on_event("startup")
 async def on_startup():
     try:
+        # Create SSL context that accepts self-signed certs
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+        
+        # Update database SSL context
+        database.url = database.url.replace("postgresql://", "postgresql+asyncpg://")
+        database._backend.ssl = ssl_context
+        
         await database.connect()
         # Test the connection
         async with database.connection() as conn:
