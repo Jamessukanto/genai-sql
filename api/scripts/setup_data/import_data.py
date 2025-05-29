@@ -80,6 +80,34 @@ def create_insert_query(table: str, columns: List[str], rows: List[Dict[str, Any
     return queries
 
 
+async def disable_rls_for_table(db: Database, table: str) -> None:
+    """Temporarily disable RLS for a table."""
+    try:
+        await db.execute(text(f"ALTER TABLE {table} DISABLE ROW LEVEL SECURITY;"))
+    except Exception as e:
+        print(f"Warning: Failed to disable RLS for table {table}: {e}")
+
+
+async def enable_rls_for_table(db: Database, table: str) -> None:
+    """Re-enable RLS for a table."""
+    try:
+        await db.execute(text(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY;"))
+        await db.execute(text(f"ALTER TABLE {table} FORCE ROW LEVEL SECURITY;"))
+    except Exception as e:
+        print(f"Warning: Failed to re-enable RLS for table {table}: {e}")
+
+
+async def setup_import_context(db: Database) -> None:
+    """Set up the database context for importing data."""
+    try:
+        # Set role to postgres (or a role with necessary privileges)
+        await db.execute(text("SET ROLE postgres;"))
+        # Optionally set other session variables if needed
+        await db.execute(text("SET statement_timeout = 0;"))  # No timeout for bulk imports
+    except Exception as e:
+        raise RuntimeError(f"Failed to set up import context: {e}")
+
+
 async def load_table_data(db: Database, table: str, csv_path: str) -> None:
     """Load data into a table from a CSV file using INSERT statements."""
     try:
@@ -87,19 +115,28 @@ async def load_table_data(db: Database, table: str, csv_path: str) -> None:
             vehicle_ids = get_vehicle_ids_from_csv(csv_path)
             for vehicle_id in vehicle_ids:
                 await create_vehicle_partition(db, vehicle_id, table)
-        else:
-            await db.execute(text(f'TRUNCATE TABLE {table} CASCADE'))
         
-        # Read CSV data
-        columns, rows = read_csv_data(csv_path)
-        if not rows:
-            print(f"Warning: No data to import for table {table}")
-            return
+        # Temporarily disable RLS and set up import context
+        await setup_import_context(db)
+        await disable_rls_for_table(db, table)
+        
+        try:
+            await db.execute(text(f'TRUNCATE TABLE {table} CASCADE'))
+            
+            # Read CSV data
+            columns, rows = read_csv_data(csv_path)
+            if not rows:
+                print(f"Warning: No data to import for table {table}")
+                return
 
-        # Create and execute INSERT statements in batches
-        queries = create_insert_query(table, columns, rows)
-        for query in queries:
-            await db.execute(text(query))
+            # Create and execute INSERT statements in batches
+            queries = create_insert_query(table, columns, rows)
+            for query in queries:
+                await db.execute(text(query))
+                
+        finally:
+            # Always re-enable RLS after import
+            await enable_rls_for_table(db, table)
             
     except Exception as e:
         raise RuntimeError(f"Failed to load data into table {table}: {e}")
