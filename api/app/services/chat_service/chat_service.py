@@ -6,7 +6,7 @@ from langchain_community.utilities import SQLDatabase
 
 from db import engine
 from app.llm.agent import build_agent
-from app.services.auth_service import get_user_info
+from app.services.service_utils import get_user_info
 from app.services.chat_service.chat_service_utils import (
     apply_session_variables_with_engine,
     apply_session_variables_with_sql_database,
