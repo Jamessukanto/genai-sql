@@ -9,21 +9,16 @@ from scripts.import_data.table_queries import CREATE_TABLE_QUERIES, PARTITIONED_
 from scripts.import_data.setup_user import setup_users_and_permissions
 
 
-async def setup_row_level_security(table: str):
-    """Set up Row Level Security (RLS) for a given table."""
-    try:
-        print(f"Enabled RLS on table '{table}'")
-        await db.execute(text(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY;"))
-        await db.execute(text(f"ALTER TABLE {table} FORCE ROW LEVEL SECURITY;"))
-
-        policy = f"fleet_isolation_{table}"
-        await db.execute(text(f"DROP POLICY IF EXISTS {policy} ON {table};"))
-        await db.execute(text(
-            f"CREATE POLICY {policy} ON {table} FOR SELECT "
-            "USING (fleet_id = current_setting('app.fleet_id')::text);"
-        ))
-    except Exception as e:
-        print(f"Error setting up RLS for table '{table}': {e}")
+async def enable_row_level_security(table: str):
+    print(f"Enabled RLS on table '{table}'")
+    policy = f"fleet_isolation_{table}"
+    await db.execute(text(f"DROP POLICY IF EXISTS {policy} ON {table};"))
+    await db.execute(text(
+        f"CREATE POLICY {policy} ON {table} FOR SELECT "
+        "USING (fleet_id = current_setting('app.fleet_id')::text);"
+    ))
+    await db.execute(text(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY;"))
+    await db.execute(text(f"ALTER TABLE {table} FORCE ROW LEVEL SECURITY;"))
 
 
 async def create_tables(drops_existing_table: bool = False):
@@ -38,7 +33,7 @@ async def create_tables(drops_existing_table: bool = False):
             await db.execute(text(ddl))
 
             if "fleet_id" in ddl:
-                await setup_row_level_security(table)
+                await enable_row_level_security(table)
 
     except Exception as e:
         print(f"Error creating tables: {e}")
@@ -86,49 +81,59 @@ async def load_data_from_csv_dir(csv_dir: str):
 
 
 async def main(drop_existing: bool, csv_dir: str):
+    csv_dir = os.path.abspath(csv_dir)
+
     if not os.path.isdir(csv_dir):
         raise ValueError(f"CSV directory does not exist: {csv_dir}")
 
-    for table in CREATE_TABLE_QUERIES.keys():
-        if not os.path.isfile(os.path.join(csv_dir, f"{table}.csv")):
-            raise ValueError(f"Missing CSV file for table: {table}")
-        
     try:
         await db.connect()
-        await create_tables(db, drop_existing)
-        await load_data_from_csv_dir(db, csv_dir)
-        await setup_users_and_permissions(db_url)
+        await create_tables(drop_existing)
+        await load_data_from_csv_dir(csv_dir)
+        await setup_users_and_permissions(db, "fleetdb")
     finally:
         await db.disconnect()
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Import data into the database.")
+    parser = argparse.ArgumentParser(
+        description="Create database; import data; set up users.")
     parser.add_argument(
         "--csv-dir", 
         default="/data", 
-        help="Directory containing CSV files (dir path in db service)"
+        help="Directory containing CSV files"
     )
     parser.add_argument(
         "--drop-existing", 
         action="store_true", 
         dest="drop_existing", 
-        help="Drop existing tables before creating new ones (default: False)"
+        help="Drop existing tables, default: False"
     )
     args = parser.parse_args()
 
-    # Load environment variables
-    env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.env"))
-    load_dotenv(env_path, override=True)
+    # # Load environment variables
+    # env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.env"))
+    # load_dotenv(env_path, override=True)
+    # db_url = os.getenv("DATABASE_URL")
 
-    # Adjust the database URL for local development
-    parsed_url = urlparse(os.getenv("DATABASE_URL"))
-    if parsed_url.hostname == "db":
-        parsed_url = parsed_url._replace(netloc=parsed_url.netloc.replace("db", "localhost"))
-    parsed_url = urlunparse(parsed_url)
-    print(f"Adjusted database URL: {parsed_url}\n\n")
+    # # Adjust the database URL for local development
+    # db_url = urlparse(db_url)
+    # if db_url.hostname == "db":
+    #     db_url = db_url._replace(netloc=db_url.netloc.replace("db", "localhost"))
+    # db_url = urlunparse(db_url)
+    # print(f"Adjusted database URL: {db_url}\n\n")
 
-    db = Database(parsed_url)
+    db_url = os.getenv("DATABASE_URL")
+
+    # For local debugging
+    if not db_url:
+        db_url = "postgresql://postgres:password@localhost:5432/fleetdb"
+
+
+    print()
+    print(db_url)
+    print()
+    db = Database(db_url)
 
     asyncio.run(
         main(args.drop_existing, args.csv_dir)
