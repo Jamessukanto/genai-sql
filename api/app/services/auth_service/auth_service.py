@@ -8,7 +8,7 @@ auth_router = APIRouter(prefix="/auth")
 SECRET_KEY = "test_secret"  # Replace in production
 
 
-@router.post("/generate_jwt_token")
+@auth_router.post("/generate_jwt_token")
 async def generate_jwt_token(
     sub: str = Body(..., embed=True),
     fleet_id: str = Body(..., embed=True),
