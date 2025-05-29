@@ -2,7 +2,6 @@ from fastapi import HTTPException, APIRouter, Body
 from app.services.auth_service.auth_utils import generate_token
 
 
-router = APIRouter()
 auth_router = APIRouter(prefix="/auth")
 
 SECRET_KEY = "test_secret"  # Replace in production

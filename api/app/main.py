@@ -5,11 +5,13 @@ from fastapi.staticfiles import StaticFiles
 from db import database
 from app.services.sql_service.sql_service import sql_router
 from app.services.chat_service.chat_service import chat_router
+from app.services.auth_service.auth_service import auth_router
 
 
 app = FastAPI()
 app.include_router(sql_router)
 app.include_router(chat_router)
+app.include_router(auth_router)
 
 @app.on_event("startup")
 async def on_startup():
