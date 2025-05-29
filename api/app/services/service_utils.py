@@ -1,7 +1,6 @@
 import base64, json
 from fastapi import HTTPException, Header
 
-
 async def get_user_info(authorization: str = Header(...)) -> dict:
     try:
         parts = authorization.split()
@@ -29,4 +28,3 @@ async def get_user_info(authorization: str = Header(...)) -> dict:
 
     except Exception as e:
         raise HTTPException(status_code=401, detail=f"Invalid token: {e}")
-

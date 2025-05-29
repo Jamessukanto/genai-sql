@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from db import database
-from app.services.auth_service import get_user_info
+from app.services.service_utils import get_user_info
 
 sql_router = APIRouter(prefix="/sql")
 
