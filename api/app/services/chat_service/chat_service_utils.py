@@ -17,5 +17,5 @@ def apply_session_variables_with_sql_database(db: SQLDatabase, user: str, fleet_
     Ensures the specific connection used by SQLDatabase has the correct session state.
     """
     db.run("SET statement_timeout = 10000;")
-    db.run(f"SET ROLE '{user}';")
+    # db.run(f"SET ROLE '{user}';")
     db.run(f"SET app.fleet_id = '{fleet_id}';")
