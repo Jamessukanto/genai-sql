@@ -42,13 +42,18 @@ async def on_startup():
         await database.connect()
 
     except Exception as e:
-        print(f"Failed to connect to database: {e}")
-        raise
+        raise HTTPException(
+            status_code=500, detail=f"Failed to connect to database: {e}"
+        )   
 
 @app.on_event("shutdown")
 async def on_shutdown():
-    await database.disconnect()
-
+    try:
+        await database.disconnect()
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to disconnect from database: {e}"
+        )
 
 
 @app.get("/api/ping")
