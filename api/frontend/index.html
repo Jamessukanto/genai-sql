@@ -34,6 +34,8 @@
           body: JSON.stringify({ sub: user, fleet_id: fleetId })
         });
 
+        console.log({ sub: user, fleet_id: fleetId });
+
         if (!tokenResponse.ok) {
           throw new Error('Failed to generate token');
         }

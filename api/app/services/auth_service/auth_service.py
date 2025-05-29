@@ -32,6 +32,10 @@ async def generate_jwt_token(
             "fleet_id": fleet_id,
             "exp": datetime.utcnow() + timedelta(hours=exp_hours)
         }
+        print(f"Payload for JWT: {payload.get('sub')}")
+        print(f"Payload for JWT: {payload.get('fleet_id')}")
+
+
         token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
         return {"token": token}
     
