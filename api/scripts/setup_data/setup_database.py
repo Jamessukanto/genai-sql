@@ -5,9 +5,9 @@ import asyncio
 from databases import Database
 from sqlalchemy import text
 
-from scripts.import_data.table_queries import CREATE_TABLE_QUERIES
-from scripts.import_data.setup_user import setup_users_and_permissions
-from scripts.import_data.import_data import main as import_data
+from scripts.setup_data.table_queries import CREATE_TABLE_QUERIES
+from scripts.setup_data.setup_user import setup_users_and_permissions
+from scripts.setup_data.import_data import main as import_data
 
 
 async def verify_db_connection(db: Database) -> None:
