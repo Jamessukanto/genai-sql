@@ -27,7 +27,7 @@
         const backendUrl = 'https://genai-sql-1.onrender.com';
 
         // Step 1: Request JWT Token from Backend
-        const tokenResponse = await fetch(`${backendUrl}/generate_jwt_token`, {
+        const tokenResponse = await fetch(`${backendUrl}/auth/generate_jwt_token`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ sub: 'postgres', fleet_id: fleetId })
