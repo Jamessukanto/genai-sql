@@ -1,8 +1,4 @@
-#TODO: Human in loop
-
-
 from typing import Literal
-
 from langgraph.graph import START, MessagesState, StateGraph
 from langgraph.prebuilt import ToolNode
 from langchain_community.agent_toolkits import SQLDatabaseToolkit
@@ -14,7 +10,6 @@ from app.llm.nodes import (
     CheckQueryNode,
     should_continue,
 )
-
 
 async def build_agent(db, llm) -> StateGraph:
     """
@@ -47,7 +42,7 @@ async def build_agent(db, llm) -> StateGraph:
     run_query_tool = next(t for t in prebuilt_tools if t.name == "sql_db_query")
 
     # Build state graph
-    builder = StateGraph(MessagesState)
+    builder = StateGraph(MessagesState)  #TODO: Human in loop
 
     builder.add_node("list_tables", ListTablesNode(list_tables_tool))
     builder.add_node("call_get_schema", CallGetSchemaNode(llm, get_schema_tool))
