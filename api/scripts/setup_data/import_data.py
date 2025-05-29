@@ -1,12 +1,12 @@
 import os
-import asyncio
 import csv
-
+import argparse
+import asyncio
 from typing import Set
 from databases import Database
 from sqlalchemy import text
 
-from scripts.setup_data.table_queries import CREATE_TABLE_QUERIES, PARTITIONED_TABLES
+from scripts.setup_data.table_queries import PARTITIONED_TABLES
 
 
 async def create_vehicle_partition(db: Database, vehicle_id: str, table: str) -> None:
@@ -49,43 +49,55 @@ async def load_table_data(db: Database, table: str, csv_path: str) -> None:
         raise RuntimeError(f"Failed to load data into table {table}: {e}")
 
 
-async def main(db: Database, csv_dir: str) -> None:
-    """Load data into all tables from corresponding CSV files in a directory."""
-    try:
-        csv_dir = os.path.abspath(csv_dir)
-        if not os.path.isdir(csv_dir):
-            raise ValueError(f"CSV directory does not exist: {csv_dir}")
+async def import_data(db: Database, csv_dir: str) -> None:
+    """Import data from CSV files into database tables."""
+    print(f"\nImporting data from {csv_dir}...")
+    from scripts.setup_data.table_queries import CREATE_TABLE_QUERIES
+    
+    for table in CREATE_TABLE_QUERIES:
+        csv_path = os.path.join(csv_dir, f"{table}.csv")
+        if not os.path.exists(csv_path):
+            print(f"Warning: CSV file not found for table {table}")
+            continue
+        print(f"Loading data into '{table}'...")
+        await load_table_data(db, table, csv_path)
 
-        for table in CREATE_TABLE_QUERIES:
-            csv_path = os.path.join(csv_dir, f"{table}.csv")
-            if not os.path.exists(csv_path):
-                print(f"Warning: CSV file not found for table {table}")
-                continue
-            print(f"Loading data into '{table}'...")
-            await load_table_data(db, table, csv_path)
+
+async def main(csv_dir: str, existing_db: Database = None) -> None:
+    """Import data from CSV files into the database."""
+    if not csv_dir:
+        raise ValueError("CSV directory path is required")
+    
+    csv_dir = os.path.abspath(csv_dir)
+    if not os.path.isdir(csv_dir):
+        raise ValueError(f"CSV directory does not exist: {csv_dir}")
+
+    try:
+        # Initialize database connection
+        db = existing_db
+        if not db:
+            db_url = os.getenv("DATABASE_URL")
+            if not db_url:
+                raise RuntimeError("DATABASE_URL environment variable is required")
+            db = Database(db_url, ssl=True)
+            await db.connect()
+
+        # Import data
+        await import_data(db, csv_dir)
+        print("Data import complete!")
+
     except Exception as e:
-        raise RuntimeError(f"Failed to import data from CSV dir: {e}")
+        print(f"\nError: {e}")
+        raise
+    finally:
+        if not existing_db and db:
+            await db.disconnect()
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Import CSV data into database tables.")
-    parser.add_argument(
-        "--csv-dir", type=str, required=True, help="Directory containing CSV files"
-    )
+    parser = argparse.ArgumentParser(description="Import data from CSV files into database.")
+    parser.add_argument("--csv-dir", required=True, help="Directory containing CSV files")
     args = parser.parse_args()
 
-    # print("existing_db:", existing_db)
-    print("db_name:", db_name)
-
-    try:
-        # Initialize connection
-        db = existing_db or Database(os.getenv("DATABASE_URL"))
-        if not existing_db:
-            await db.connect()
-            await verify_db_connection(db)
-            print("Database connection established")
-    except Exception as e:
-        print(f"Connection error: {e}")
-
-    asyncio.run(main(db, args.csv_dir))
+    asyncio.run(main(args.csv_dir))
 

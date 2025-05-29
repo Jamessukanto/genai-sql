@@ -1,13 +1,12 @@
-
 import os
 import argparse
 import asyncio
 from databases import Database
 from sqlalchemy import text
+from typing import Optional
 
 from scripts.setup_data.table_queries import CREATE_TABLE_QUERIES
 from scripts.setup_data.setup_user import setup_users_and_permissions
-from scripts.setup_data.import_data import main as import_data
 
 
 async def verify_db_connection(db: Database) -> None:
@@ -46,51 +45,69 @@ async def create_table(db: Database, table: str, ddl: str, drop_existing: bool =
         raise RuntimeError(f"Failed to create table {table}: {e}")
 
 
-async def main(drop_existing: bool, csv_dir: str, existing_db: Database = None, db_name: str = None) -> None:
-    """Initialize database schema, load data, and set up permissions."""
+async def setup_database_schema(
+    db: Database,
+    drop_existing: bool = False
+) -> None:
+    """Set up database schema only, without importing data."""
+    print("\nSetting up database tables...")
+    for table, ddl in CREATE_TABLE_QUERIES.items():
+        print(f"Creating table '{table}'...")
+        await create_table(db, table, ddl, drop_existing)
 
     # print("existing_db:", existing_db)
     print("db_name:", db_name)
 
+async def main(
+    drop_existing: bool = False,
+    existing_db: Optional[Database] = None,
+    db_name: Optional[str] = None
+) -> None:
+    """
+    Set up database schema and configure permissions.
+    
+    Args:
+        drop_existing: Whether to drop existing tables before creating new ones
+        existing_db: Optional existing database connection to use
+        db_name: Optional database name to use (defaults to fleetdb)
+    """
     try:
-        # Initialize connection
-        db = existing_db or Database(os.getenv("DATABASE_URL"))
-        if not existing_db:
+        # Initialize database connection
+        db = existing_db
+        if not db:
+            db_url = os.getenv("DATABASE_URL")
+            if not db_url:
+                raise RuntimeError("DATABASE_URL environment variable is required")
+            db = Database(db_url, ssl=True)
             await db.connect()
-            await verify_db_connection(db)
-            print("Database connection established")
 
-        # Create tables
-        print(f"\nSetting up database tables...")
-        for table, ddl in CREATE_TABLE_QUERIES.items():
-            print(f"Creating table '{table}'...")
-            await create_table(db, table, ddl, drop_existing)
+        # Verify connection
+        await verify_db_connection(db)
+
+        # Set up database schema
+        await setup_database_schema(db, drop_existing)
         
-        # Import data
-        print(f"\nImporting data from {csv_dir}...")
-        await import_data(db, csv_dir)
-
         # Set up users and permissions
-        print(f"\nSetting up users for database: {db_name}")
         db_name = db_name or "fleetdb"
+        print(f"\nSetting up users and permissions for database: {db_name}")
         await setup_users_and_permissions(db, db_name)
+        print("Database setup complete!")
 
     except Exception as e:
         print(f"\nError: {e}")
         raise
     finally:
-        if not existing_db:
+        if not existing_db and db:
             await db.disconnect()
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Initialize database schema and load data.")
-    parser.add_argument("--csv-dir", default="/api/data", help="Directory containing CSV files")
+    parser = argparse.ArgumentParser(description="Initialize database schema.")
     parser.add_argument("--drop-existing", action="store_true", help="Drop existing tables")
     parser.add_argument("--db-name", help="Database name to use")
     args = parser.parse_args()
 
-    asyncio.run(main(args.drop_existing, args.csv_dir, db_name=args.db_name))
+    asyncio.run(main(args.drop_existing, db_name=args.db_name))
 
 
 

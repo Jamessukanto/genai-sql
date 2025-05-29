@@ -5,6 +5,7 @@ from urllib.parse import urlparse
 
 from db import database, engine
 from scripts.setup_data.setup_database import main as setup_database_main
+from scripts.setup_data.import_data import main as import_data_main
 from app.services.service_utils import get_user_info
 
 
@@ -45,7 +46,7 @@ async def execute_sql(req: SQLRequest, user_info: dict = Depends(get_user_info))
 @sql_router.post("/setup")
 async def setup_database():
     """
-    Import CSV data into the database.
+    Set up database schema and import data.
     Note: This is a programmatic alternative to pgAdmin service and 
           shell access on Render (not available for free tier).
     """
@@ -70,12 +71,17 @@ async def setup_database():
         db_url = str(engine.url)
         db_name = urlparse(db_url).path.strip('/')
 
-        print(f"Setting up database '{db_name}'. CSV dir: {data_dir}")
-        await setup_database_main(drop_existing=True, csv_dir=data_dir, db_name=db_name)
+        print(f"Setting up database '{db_name}'...")
+        
+        # First set up the database schema
+        await setup_database_main(drop_existing=True, db_name=db_name)
+        
+        # Then import the data
+        await import_data_main(csv_dir=data_dir)
         
         return {
             "status": "success",
-            "message": "Database setup completed successfully",
+            "message": "Database setup and data import completed successfully",
             "details": {
                 "database": db_name,
                 "data_directory": data_dir
