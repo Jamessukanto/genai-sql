@@ -22,14 +22,16 @@
     document.getElementById('submit').addEventListener('click', async () => {
       const fleetId = document.getElementById('fleet_id').value;
       const query = document.getElementById('query').value;
+
       const backendUrl = 'https://genai-sql-1.onrender.com'; // 'http://localhost:8000/chat/execute_user_query'
+      const user = 'end_user'; // superuser
 
       try {
         // Request JWT Token from Backend
         const tokenResponse = await fetch(`${backendUrl}/auth/generate_jwt_token`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sub: 'postgres', fleet_id: fleetId })
+          body: JSON.stringify({ sub: user, fleet_id: fleetId })
         });
 
         if (!tokenResponse.ok) {
@@ -47,6 +49,23 @@
           },
           body: JSON.stringify({ query, fleet_id: fleetId }) 
         });
+
+
+    // try:
+    //     print("generate_jwt_token endpoint!")
+    //     payload = {
+    //         "sub": sub,
+    //         "fleet_id": fleet_id,
+    //         "exp": datetime.utcnow() + timedelta(hours=exp_hours)
+    //     }
+    //     token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
+    //     return token
+    
+    // except Exception as e:
+    //     raise HTTPException(
+    //         status_code=500,
+    //         detail=f"Failed to generate token: {e}"
+    //     )
 
 // curl -X POST http://localhost:8000/chat/execute_user_query \
 //   -H "Content-Type: application/json" \
