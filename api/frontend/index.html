@@ -22,11 +22,10 @@
     document.getElementById('submit').addEventListener('click', async () => {
       const fleetId = document.getElementById('fleet_id').value;
       const query = document.getElementById('query').value;
+      const backendUrl = 'https://genai-sql-1.onrender.com'; // 'http://localhost:8000/chat/execute_user_query'
 
       try {
-        const backendUrl = 'https://genai-sql-1.onrender.com';
-
-        // Step 1: Request JWT Token from Backend
+        // Request JWT Token from Backend
         const tokenResponse = await fetch(`${backendUrl}/auth/generate_jwt_token`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -39,7 +38,7 @@
 
         const { token } = await tokenResponse.json();
 
-        // Step 2: Send Query to Backend with Token
+        // Send Query to Backend with Token
         const chatResponse = await fetch(`${backendUrl}/chat/execute_user_query`, {
           method: 'POST',
           headers: {
