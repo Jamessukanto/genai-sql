@@ -30,19 +30,49 @@ async def execute_user_query(req: ChatRequest, user_info: dict = Depends(get_use
     try:
         # Set up LLM
         llm = init_chat_model(model="mistral-medium-latest", temperature=0)
-        print("llm inited")
-        # Set up sql database 
-        apply_session_variables_with_engine(engine, user, fleet_id)
-        db = SQLDatabase(engine=engine)
-        apply_session_variables_with_sql_database(db, user, fleet_id)
 
-        # Run LLM agent
+        # Debug database connection
+        print("\n=== Database Connection Debug ===")
+        print(f"Database URL: {engine.url}")
+        try:
+            # Test database connection
+            with engine.connect() as conn:
+                result = conn.execute("SELECT 1").scalar()
+                print(f"Database connection test: {result == 1}")
+        except Exception as db_err:
+            print(f"Database connection error: {str(db_err)}")
+            raise HTTPException(status_code=500, detail=f"Database connection failed: {str(db_err)}")
+
+        # Set up sql database and session variables
+        print("\n=== Setting up session variables ===")
+        try:
+            apply_session_variables_with_engine(engine, user, fleet_id)
+            print("Session variables applied to engine")
+            
+            db = SQLDatabase(engine=engine)
+            apply_session_variables_with_sql_database(db, user, fleet_id)
+            print("Session variables applied to SQLDatabase")
+            
+            # Test if session variables are set
+            with engine.connect() as conn:
+                result = conn.execute("SHOW ALL").fetchall()
+                print("\nCurrent PostgreSQL session variables:")
+                for row in result:
+                    if 'app.' in str(row[0]):
+                        print(f"{row[0]} = {row[1]}")
+        except Exception as sess_err:
+            print(f"Session variables error: {str(sess_err)}")
+            raise HTTPException(status_code=500, detail=f"Failed to set session variables: {str(sess_err)}")
+
+        # Set up for running LLM agent
         agent = await build_agent(db, llm)
-        print("agent inited")
-        steps = []
         messages = [{"role": "user", "content": req.query}]
+
+        steps = []
         for step in agent.stream({"messages": messages}, stream_mode="values"):
-            print()
+            print("\n=== Agent Step ===")
+            print(f"Step type: {type(step)}")
+            print(f"Step content: {step}")
             step["messages"][-1].pretty_print()
             steps.append(step)
 
@@ -51,6 +81,7 @@ async def execute_user_query(req: ChatRequest, user_info: dict = Depends(get_use
         return {"response": final_response}
     
     except Exception as e:
+        print(f"\nError in execute_user_query: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
     
 
