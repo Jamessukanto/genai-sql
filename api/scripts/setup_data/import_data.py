@@ -68,23 +68,20 @@ async def create_import_functions(db: Database) -> None:
         for table in CREATE_TABLE_QUERIES:
             await db.execute(text(f"""
                 CREATE OR REPLACE FUNCTION insert_into_{table}(
-                    column_names text[],
-                    values_list text[]
+                    column_names text,
+                    values_list text
                 )
                 RETURNS void
                 LANGUAGE plpgsql
                 SECURITY DEFINER
                 SET search_path = public
                 AS $$
-                DECLARE
-                    insert_sql text;
                 BEGIN
-                    insert_sql := format(
+                    EXECUTE format(
                         'INSERT INTO {table} (%s) VALUES (%s)',
-                        array_to_string(column_names, ', '),
-                        array_to_string(values_list, ', ')
+                        column_names,
+                        values_list
                     );
-                    EXECUTE insert_sql;
                 END;
                 $$;
             """))
@@ -113,7 +110,7 @@ async def load_table_data(db: Database, table: str, csv_path: str) -> None:
                 await create_vehicle_partition(db, vehicle_id, table)
         
         # Truncate the table using the security definer function
-        await db.execute(text(f"SELECT truncate_table('{table}');"))
+        await db.execute(text("SELECT truncate_table(:table_name)"), {"table_name": table})
         
         # Read CSV data
         columns, rows = read_csv_data(csv_path)
@@ -128,16 +125,15 @@ async def load_table_data(db: Database, table: str, csv_path: str) -> None:
             for row in batch:
                 # Prepare column names and values
                 values = [prepare_value(row.get(col, '')) for col in columns]
+                # Format column names and values as comma-separated strings
+                column_names_str = ', '.join(columns)
+                values_str = ', '.join(values)
                 # Use the security definer function to insert
-                # await db.execute(text(
-                #     f"SELECT insert_into_{table}(:columns, :values);",
-                #     {"columns": columns, "values": values}
-                # ))
                 await db.execute(
-                    text(f"SELECT insert_into_{table}(:columns, :values);"),
-                    {"columns": columns, "values": values}
+                    text(f"SELECT insert_into_{table}(:column_names, :value_list)"),
+                    {"column_names": column_names_str, "value_list": values_str}
                 )
-
+            
     except Exception as e:
         raise RuntimeError(f"Failed to load data into table {table}: {e}")
 
