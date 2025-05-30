@@ -212,4 +212,3 @@ if __name__ == "__main__":
 
 
 
-python -m scripts.setup_data.import_data --csv-dir data_throw
