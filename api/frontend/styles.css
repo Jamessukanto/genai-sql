@@ -1,0 +1,89 @@
+:root {
+  --bg-color: #1a1a1a;
+  --text-color: #ffffff;
+  --input-bg: #2d2d2d;
+  --border-color: #404040;
+  --section-bg: #242424;
+  --button-bg: #4a4a4a;
+  --button-hover: #5a5a5a;
+  --success-color: #4caf50;
+  --error-color: #f44336;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+}
+
+.section {
+  margin-bottom: 30px;
+  padding: 20px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--section-bg);
+}
+
+#response {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: var(--input-bg);
+  border-radius: 8px;
+  white-space: pre-wrap;
+  border: 1px solid var(--border-color);
+}
+
+.error {
+  color: var(--error-color);
+}
+
+.success {
+  color: var(--success-color);
+}
+
+button {
+  padding: 10px 20px;
+  margin: 5px;
+  cursor: pointer;
+  background-color: var(--button-bg);
+  color: var(--text-color);
+  border: none;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+button:hover {
+  background-color: var(--button-hover);
+}
+
+input[type="text"], select {
+  padding: 10px;
+  margin: 5px;
+  width: 200px;
+  background-color: var(--input-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+}
+
+input[type="text"]::placeholder {
+  color: #888;
+}
+
+select {
+  appearance: none;
+  padding-right: 30px;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 20px;
+}
+
+label {
+  display: inline-block;
+  margin-bottom: 5px;
+  color: var(--text-color);
+} 
