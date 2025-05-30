@@ -58,18 +58,8 @@ async def create_import_functions(db: Database) -> None:
             SECURITY DEFINER
             SET search_path = public
             AS $$
-            DECLARE
-                original_user text;
             BEGIN
-                -- Store current user and switch to database owner
-                original_user := session_user;
-                EXECUTE 'SET LOCAL SESSION AUTHORIZATION DEFAULT';
-                
-                -- Perform truncate
                 EXECUTE format('TRUNCATE TABLE %I CASCADE', table_name);
-                
-                -- Restore original user
-                EXECUTE format('SET LOCAL SESSION AUTHORIZATION %I', original_user);
             END;
             $$;
         """)
@@ -86,22 +76,13 @@ async def create_import_functions(db: Database) -> None:
                 SECURITY DEFINER
                 SET search_path = public
                 AS $$
-                DECLARE
-                    original_user text;
                 BEGIN
-                    -- Store current user and switch to database owner
-                    original_user := session_user;
-                    EXECUTE 'SET LOCAL SESSION AUTHORIZATION DEFAULT';
-                    
-                    -- Perform insert
+                    -- Direct table access with SECURITY DEFINER privileges
                     EXECUTE format(
                         'INSERT INTO {table} (%s) VALUES (%s)',
                         column_names,
                         values_list
                     );
-                    
-                    -- Restore original user
-                    EXECUTE format('SET LOCAL SESSION AUTHORIZATION %I', original_user);
                 END;
                 $$;
             """)
@@ -129,40 +110,33 @@ async def load_table_data(db: Database, table: str, csv_path: str) -> None:
             for vehicle_id in vehicle_ids:
                 await create_vehicle_partition(db, vehicle_id, table)
         
-        # Switch to database owner temporarily
-        await db.execute(query="SET LOCAL SESSION AUTHORIZATION DEFAULT")
+        # Truncate the table using the security definer function
+        await db.execute(
+            query="SELECT truncate_table(:table_name)",
+            values={"table_name": table}
+        )
         
-        try:
-            # Truncate the table using the security definer function
-            await db.execute(
-                query="SELECT truncate_table(:table_name)",
-                values={"table_name": table}
-            )
-            
-            # Read CSV data
-            columns, rows = read_csv_data(csv_path)
-            if not rows:
-                print(f"Warning: No data to import for table {table}")
-                return
+        # Read CSV data
+        columns, rows = read_csv_data(csv_path)
+        if not rows:
+            print(f"Warning: No data to import for table {table}")
+            return
 
-            # Import data in batches
-            batch_size = 1000
-            for i in range(0, len(rows), batch_size):
-                batch = rows[i:i + batch_size]
-                for row in batch:
-                    # Prepare column names and values
-                    values = [prepare_value(row.get(col, '')) for col in columns]
-                    # Format column names and values as comma-separated strings
-                    column_names_str = ', '.join(columns)
-                    values_str = ', '.join(values)
-                    # Use the security definer function to insert
-                    await db.execute(
-                        query=f"SELECT insert_into_{table}(:column_names, :value_list)",
-                        values={"column_names": column_names_str, "value_list": values_str}
-                    )
-        finally:
-            # Reset session authorization back to original
-            await db.execute(query="RESET SESSION AUTHORIZATION")
+        # Import data in batches
+        batch_size = 1000
+        for i in range(0, len(rows), batch_size):
+            batch = rows[i:i + batch_size]
+            for row in batch:
+                # Prepare column names and values
+                values = [prepare_value(row.get(col, '')) for col in columns]
+                # Format column names and values as comma-separated strings
+                column_names_str = ', '.join(columns)
+                values_str = ', '.join(values)
+                # Use the security definer function to insert
+                await db.execute(
+                    query=f"SELECT insert_into_{table}(:column_names, :value_list)",
+                    values={"column_names": column_names_str, "value_list": values_str}
+                )
             
     except Exception as e:
         raise RuntimeError(f"Failed to load data into table {table}: {e}")
