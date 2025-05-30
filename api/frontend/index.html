@@ -78,7 +78,7 @@
           { query },
           token
         );
-        showResponse(result);
+        showResponse(result['response']);
       } catch (error) {
         showResponse(error.message, true);
         console.error('Error:', error);

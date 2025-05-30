@@ -74,19 +74,14 @@ api/
 
    \q
    ```
-
-   Web UI check for RLS 
-   Go to http://localhost:8000/app/ and submit
-
-
-   Verify RLS via Web UI
-   Open the app in your browser: http://localhost:8000/app/
-   
-   Submit a prompt like: "How many SRM T3 EVs are in my fleet?"
+   #### Localhost check for RLS <br>
+   Go to http://localhost:8000/app/ and submit a prompt like: "How many SRM T3 EVs are in my fleet?" <br>
    The answer should return
    → '2' if fleet_id=1
    → '0' if fleet_id=2
-   
+   <br>
+   <br>
+
    ```bash
 
    # Clean up (This remove volumes, too)
