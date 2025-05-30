@@ -1,12 +1,14 @@
 SOH:
-  description: "State of Health: long-term battery condition percentage"
+  description: "State of Health: Battery health percentage from both real-time metrics and cycle analysis"
   columns:
     - processed_metrics.battery_health_pct
     - battery_cycles.soh_pct
 SOC:
-  description: "State of Charge: current battery level percentage"
+  description: "State of Charge: Real-time battery level percentage from telemetry and charging data"
   columns:
     - raw_telemetry.soc_pct
+    - charging_sessions.start_soc
+    - charging_sessions.end_soc
     - processed_metrics.soc_band
 "SOC comfort zone":
   description: "Healthy operating band for SOC"
@@ -23,31 +25,48 @@ GBM6296G:
     - vehicles.registration_no
     - vehicles.vehicle_id
 Trip:
-  description: "Trip records with start and end timestamps"
+  description: "Trip records with duration, distance, and energy usage"
   columns:
+    - trips.trip_id
     - trips.start_ts
     - trips.end_ts
     - trips.distance_km
+    - trips.energy_kwh
+    - trips.idle_minutes
+    - trips.avg_temp_c
 "Charging session":
-  description: "Charging events with SOC and energy delivered"
+  description: "Charging events with duration, SOC changes, and energy delivered"
   columns:
+    - charging_sessions.session_id
     - charging_sessions.start_ts
     - charging_sessions.end_ts
+    - charging_sessions.start_soc
+    - charging_sessions.end_soc
     - charging_sessions.energy_kwh
+    - charging_sessions.location
 Alert:
-  description: "Alerts for safety or performance thresholds"
+  description: "Vehicle alerts with type, severity, and resolution status"
   columns:
+    - alerts.alert_id
     - alerts.alert_type
-    - alerts.alert_ts
     - alerts.severity
+    - alerts.alert_ts
+    - alerts.value
+    - alerts.threshold
+    - alerts.resolved_bool
+    - alerts.resolved_ts
 "Battery cycle":
-  description: "Cycling data for SOH analysis"
+  description: "Battery cycling data for health analysis"
   columns:
+    - battery_cycles.cycle_id
+    - battery_cycles.ts
     - battery_cycles.dod_pct
     - battery_cycles.soh_pct
 "Geofence event":
-  description: "Geofence entry/exit events"
+  description: "Vehicle geofence entry/exit events"
   columns:
+    - geofence_events.event_id
+    - geofence_events.geofence_name
     - geofence_events.enter_ts
     - geofence_events.exit_ts
 Vehicle:
@@ -56,12 +75,34 @@ Vehicle:
     - vehicles.vehicle_id
     - vehicles.vin
 Driver:
-  description: "Driver identity records"
+  description: "Driver information and fleet assignment"
   columns:
     - drivers.driver_id
     - drivers.name
+    - drivers.license_no
+    - drivers.hire_date
+    - drivers.fleet_id
 Fleet:
-  description: "Fleet grouping identifier"
+  description: "Fleet information with region settings"
   columns:
     - fleets.fleet_id
     - fleets.name
+    - fleets.country
+    - fleets.time_zone
+"Fleet metrics":
+  description: "Daily fleet performance summary"
+  columns:
+    - fleet_daily_summary.date
+    - fleet_daily_summary.total_distance_km
+    - fleet_daily_summary.total_energy_kwh
+    - fleet_daily_summary.active_vehicles
+    - fleet_daily_summary.avg_soc_pct
+"Maintenance":
+  description: "Vehicle maintenance records"
+  columns:
+    - maintenance_logs.maint_id
+    - maintenance_logs.maint_type
+    - maintenance_logs.start_ts
+    - maintenance_logs.end_ts
+    - maintenance_logs.cost_sgd
+    - maintenance_logs.notes
