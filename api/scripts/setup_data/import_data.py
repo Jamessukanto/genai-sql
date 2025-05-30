@@ -147,21 +147,44 @@ async def load_table_data(db: Database, table: str, csv_path: str) -> None:
                 print(f"Warning: No data to import for table {table}")
                 return
 
+            print(f"\nProcessing {len(rows)} rows for table {table}")
+            print(f"Columns found: {', '.join(columns)}")
+            
             # Import data in batches
             batch_size = 1000
+            rows_imported = 0
             for i in range(0, len(rows), batch_size):
                 batch = rows[i:i + batch_size]
-                for row in batch:
-                    # Prepare column names and values
-                    values = [prepare_value(row.get(col, '')) for col in columns]
-                    # Format column names and values as comma-separated strings
-                    column_names_str = ', '.join(columns)
-                    values_str = ', '.join(values)
-                    # Use the security definer function to insert
-                    await db.execute(
-                        query=f"SELECT insert_into_{table}(:column_names, :value_list)",
-                        values={"column_names": column_names_str, "value_list": values_str}
-                    )
+                try:
+                    for row in batch:
+                        # Prepare column names and values
+                        values = [prepare_value(row.get(col, '')) for col in columns]
+                        # Format column names and values as comma-separated strings
+                        column_names_str = ', '.join(columns)
+                        values_str = ', '.join(values)
+                        
+                        # Log the first few rows for debugging
+                        if rows_imported < 3:
+                            print(f"Sample row {rows_imported + 1}: {values_str}")
+                        
+                        # Use the security definer function to insert
+                        await db.execute(
+                            query=f"SELECT insert_into_{table}(:column_names, :value_list)",
+                            values={"column_names": column_names_str, "value_list": values_str}
+                        )
+                        rows_imported += 1
+                except Exception as e:
+                    print(f"Error importing row in {table}: {e}")
+                    print(f"Problematic row values: {values_str}")
+                    raise
+            
+            print(f"Successfully imported {rows_imported} rows into {table}")
+            
+            # Verify the import
+            count_result = await db.fetch_one(f"SELECT COUNT(*) FROM {table}")
+            if count_result:
+                print(f"Actual row count in {table} after import: {count_result[0]}")
+            
         finally:
             # Re-enable RLS
             await enable_rls(db, table)
