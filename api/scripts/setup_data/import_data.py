@@ -47,6 +47,16 @@ def read_csv_data(csv_path: str) -> tuple[List[str], List[Dict[str, Any]]]:
         raise RuntimeError(f"Failed to read CSV file {csv_path}: {e}")
 
 
+async def disable_rls(db: Database, table: str) -> None:
+    """Temporarily disable RLS on a table."""
+    await db.execute(query=f"ALTER TABLE {table} DISABLE ROW LEVEL SECURITY")
+
+
+async def enable_rls(db: Database, table: str) -> None:
+    """Re-enable RLS on a table."""
+    await db.execute(query=f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY")
+
+
 async def create_import_functions(db: Database) -> None:
     """Create helper functions for data import."""
     try:
@@ -110,33 +120,40 @@ async def load_table_data(db: Database, table: str, csv_path: str) -> None:
             for vehicle_id in vehicle_ids:
                 await create_vehicle_partition(db, vehicle_id, table)
         
-        # Truncate the table using the security definer function
-        await db.execute(
-            query="SELECT truncate_table(:table_name)",
-            values={"table_name": table}
-        )
+        # Temporarily disable RLS
+        await disable_rls(db, table)
         
-        # Read CSV data
-        columns, rows = read_csv_data(csv_path)
-        if not rows:
-            print(f"Warning: No data to import for table {table}")
-            return
+        try:
+            # Truncate the table using the security definer function
+            await db.execute(
+                query="SELECT truncate_table(:table_name)",
+                values={"table_name": table}
+            )
+            
+            # Read CSV data
+            columns, rows = read_csv_data(csv_path)
+            if not rows:
+                print(f"Warning: No data to import for table {table}")
+                return
 
-        # Import data in batches
-        batch_size = 1000
-        for i in range(0, len(rows), batch_size):
-            batch = rows[i:i + batch_size]
-            for row in batch:
-                # Prepare column names and values
-                values = [prepare_value(row.get(col, '')) for col in columns]
-                # Format column names and values as comma-separated strings
-                column_names_str = ', '.join(columns)
-                values_str = ', '.join(values)
-                # Use the security definer function to insert
-                await db.execute(
-                    query=f"SELECT insert_into_{table}(:column_names, :value_list)",
-                    values={"column_names": column_names_str, "value_list": values_str}
-                )
+            # Import data in batches
+            batch_size = 1000
+            for i in range(0, len(rows), batch_size):
+                batch = rows[i:i + batch_size]
+                for row in batch:
+                    # Prepare column names and values
+                    values = [prepare_value(row.get(col, '')) for col in columns]
+                    # Format column names and values as comma-separated strings
+                    column_names_str = ', '.join(columns)
+                    values_str = ', '.join(values)
+                    # Use the security definer function to insert
+                    await db.execute(
+                        query=f"SELECT insert_into_{table}(:column_names, :value_list)",
+                        values={"column_names": column_names_str, "value_list": values_str}
+                    )
+        finally:
+            # Re-enable RLS
+            await enable_rls(db, table)
             
     except Exception as e:
         raise RuntimeError(f"Failed to load data into table {table}: {e}")
