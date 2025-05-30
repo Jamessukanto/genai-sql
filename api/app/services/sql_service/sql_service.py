@@ -14,6 +14,9 @@ sql_router = APIRouter(prefix="/sql")
 class SQLRequest(BaseModel):
     sql: str
 
+class ImportDataRequest(BaseModel):
+    csv_dir: str
+
 
 @sql_router.post("/execute")
 async def execute_sql(req: SQLRequest, user_info: dict = Depends(get_user_info)):
@@ -99,38 +102,30 @@ async def setup_database():
 
 
 @sql_router.post("/import_data")
-async def import_data():
+async def import_data(req: ImportDataRequest):
     """
     Import data from CSV files into the database.
-    Note: CSV files should be present in the data directory.
+    Expects a csv_dir parameter pointing to the directory containing CSV files.
     """
     try:
-        # Get the absolute path to the data directory
-        data_dir = os.path.abspath(
-            os.path.join(
-                os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
-                "data"
-            )
-        )
-        if not os.path.exists(data_dir):
+        csv_dir = os.path.abspath(req.csv_dir)
+        if not os.path.exists(csv_dir):
             raise HTTPException(
                 status_code=400, 
                 detail={
                     "status": "error",
-                    "message": f"Data directory not found at {data_dir}"
+                    "message": f"Data directory not found at {csv_dir}"
                 }
             )
 
-        print(f"Importing data from '{data_dir}'...")
-        
-        # Import the data
-        await import_data_main(csv_dir=data_dir)
+        print(f"Importing data from '{csv_dir}'...")
+        await import_data_main(csv_dir=csv_dir)
         
         return {
             "status": "success",
             "message": "Data import completed successfully",
             "details": {
-                "data_directory": data_dir
+                "data_directory": csv_dir
             }
         }
 
