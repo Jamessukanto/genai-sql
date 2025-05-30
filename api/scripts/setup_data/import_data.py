@@ -193,14 +193,37 @@ async def load_table_data(db: Database, table: str, csv_path: str) -> None:
         raise RuntimeError(f"Failed to load data into table {table}: {e}")
 
 
+def get_importable_tables(available_tables: set, imported_tables: set, dependencies: dict) -> set:
+    """
+    Find tables that can be imported in the current stage.
+    A table is importable if all its dependencies have been imported.
+    """
+    importable = set()
+    for table in available_tables:
+        if table in imported_tables:
+            continue
+        
+        # Tables with no dependencies are always importable
+        if table not in dependencies:
+            importable.add(table)
+            continue
+            
+        # Check if all dependencies are satisfied
+        deps = dependencies.get(table, set())
+        if deps.issubset(imported_tables):
+            importable.add(table)
+            
+    return importable
+
+
 async def import_data(db: Database, csv_dir: str) -> None:
-    """Import data from CSV files into the database."""
+    """Import data from CSV files into the database using a staged approach."""
     print(f"\nImporting data from {csv_dir}...")
     
     # First create the helper functions
     await create_import_functions(db)
     
-    # First, check which CSV files are actually available
+    # Check which CSV files are available
     available_csvs = {}
     missing_csvs = []
     for table in IMPORT_ORDER:
@@ -222,38 +245,55 @@ async def import_data(db: Database, csv_dir: str) -> None:
     for table in available_csvs:
         print(f"- {table}.csv")
     
-    if missing_csvs:
-        print("\nMissing CSV files (these tables will be skipped):")
-        for table in missing_csvs:
-            print(f"- {table}.csv")
+    # Convert dependencies to sets for easier handling
+    table_dependencies = {
+        table: set(deps) for table, deps in TABLE_DEPENDENCIES.items()
+    }
     
-    # Import tables in order, but only those that have CSV files
-    for table in IMPORT_ORDER:
-        if table not in available_csvs:
-            continue
+    # Staged import process
+    available_tables = set(available_csvs.keys())
+    imported_tables = set()
+    stage = 1
+    
+    while True:
+        importable = get_importable_tables(available_tables, imported_tables, table_dependencies)
+        if not importable:
+            break
             
-        # Check dependencies only against available CSV files
-        if table in TABLE_DEPENDENCIES:
-            missing_deps = []
-            for dep_table in TABLE_DEPENDENCIES[table]:
-                if dep_table not in available_csvs:
-                    missing_deps.append(dep_table)
-            
+        print(f"\nStage {stage} - Importing tables: {', '.join(sorted(importable))}")
+        for table in sorted(importable):  # Sort for consistent order
+            try:
+                print(f"\nLoading data into '{table}'...")
+                await load_table_data(db, table, available_csvs[table])
+                imported_tables.add(table)
+            except Exception as e:
+                print(f"Failed to import {table}: {e}")
+                # Remove failed table from available tables
+                available_tables.remove(table)
+        
+        stage += 1
+    
+    # Final summary
+    print("\nImport Summary:")
+    if imported_tables:
+        print("Successfully imported tables:")
+        for table in sorted(imported_tables):
+            print(f"- {table}")
+    
+    remaining = available_tables - imported_tables
+    if remaining:
+        print("\nTables that could not be imported (missing dependencies):")
+        for table in sorted(remaining):
+            deps = table_dependencies.get(table, set())
+            missing_deps = deps - imported_tables
             if missing_deps:
-                print(f"\nSkipping '{table}' due to missing dependencies: {', '.join(missing_deps)}")
-                print(f"Note: To import '{table}', you need CSV files for: {', '.join(TABLE_DEPENDENCIES[table])}")
-                continue
-                    
-        print(f"\nLoading data into '{table}'...")
-        await load_table_data(db, table, available_csvs[table])
+                print(f"- {table} (needs: {', '.join(sorted(missing_deps))})")
+            else:
+                print(f"- {table}")
     
-    print("\nImport summary:")
-    print("Successfully processed the following tables:")
-    for table in available_csvs:
-        print(f"- {table}")
     if missing_csvs:
-        print("\nSkipped tables (CSV files not found):")
-        for table in missing_csvs:
+        print("\nSkipped tables (no CSV file found):")
+        for table in sorted(missing_csvs):
             print(f"- {table}")
 
 
