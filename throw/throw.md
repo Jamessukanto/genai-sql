@@ -187,3 +187,37 @@ Charging session; Period when the vehicle is plugged in (table charging_sessions
 Battery cycle; One charging-and-discharging cycle tracked for long-term State-of-Health (SOH) analysis.
 Geofence event; Entry/exit of a predefined geographic area (e.g. Depot, Airport).;;
 Fleet / Vehicle / Driver hierarchy; fleets → vehicles → trips / alerts / telemetry, and drivers link to trips through driver_trip_map. All natural language (NL) queries should respect this hierarchy.;;
+
+
+
+
+
+
+Table; Module; Key columns (PK 🔑, FK ↗)
+
+fleets; Fleet & Admin; fleet_id🔑, name, country, time_zone
+
+vehicles; Vehicle registry; vehicle_id🔑, vin (UNIQ), fleet_id↗fleets, model, make, variant, registration_no, purchase_date
+
+raw_telemetry; Real‐time Telemetry; ts🔑, vehicle_id↗vehicles, soc_pct,
+pack_voltage_v, pack_current_a, batt_temp_c, latitude, longitude, speed_kph, odo_km
+
+processed_metrics; Processed Metrics; ts🔑, vehicle_id↗vehicles, avg_speed_kph_15m, distance_km_15m, energy_kwh_15m, battery_health_pct, soc_band (enum)
+
+charging_sessions; Charging & Energy; session_id🔑, vehicle_id↗vehicles, start_ts, end_ts, start_soc, end_soc, energy_kwh, location
+
+trips; Trips & Utilisation; trip_id🔑, vehicle_id↗vehicles, start_ts, end_ts, distance_km, energy_kwh, idle_minutes, avg_temp_c 
+
+alerts; Alerts & Safety; alert_id🔑, vehicle_id↗vehicles, alert_type, severity (enum), alert_ts, value, threshold, resolved_bool, resolved_ts
+
+battery_cycles; Battery Health; cycle_id🔑, vehicle_id↗vehicles, ts, dod_pct, soh_pct
+
+maintenance_logs; Maintenance; maint_id🔑, vehicle_id↗vehicles, maint_type, start_ts, end_ts, cost_sgd, notes
+
+drivers; Driver Behaviour; driver_id🔑, fleet_id↗fleets, name, license_no, hire_date
+
+driver_trip_map; Driver–Trip link; trip_id↗trips, driver_id↗drivers, primary_bool (default TRUE)
+
+geofence_events; Geospatial; event_id🔑, vehicle_id↗vehicles, geofence_name, enter_ts, exit_ts
+
+fleet_daily_summary; Reports & Exports (materialised); fleet_id↗fleets, date, total_distance_km, total_energy_kwh, active_vehicles, avg_soc_pct
