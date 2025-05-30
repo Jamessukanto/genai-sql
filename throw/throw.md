@@ -1,5 +1,5 @@
 # Setup database
-curl -X POST https://genai-sql-1.onrender.com/sql/setup
+curl -X POST https://genai-sql-1.onrender.com/sql/api/setup
 
 # Import data
 curl -X POST https://genai-sql-1.onrender.com/api/sql/import_data -H "Content-Type: application/json" -d '{"csv_dir": "data_throw"}'
@@ -7,7 +7,7 @@ curl -X POST https://genai-sql-1.onrender.com/api/sql/import_data -H "Content-Ty
 # Generate JWT token
 curl -X POST https://genai-sql-1.onrender.com/api/auth/generate_jwt_token 
 -H "Content-Type: application/json" 
--d '{"sub": "superuser", "fleet_id": "fleet1", "exp_hours": 24}'
+-d '{"sub": "superuser", "fleet_id": "fleet1", "exp_hours": 1}'
 
 
 # Execute SQL
