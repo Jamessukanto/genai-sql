@@ -6,7 +6,7 @@ from typing import Set, List, Dict, Any
 from databases import Database
 from sqlalchemy import text
 
-from scripts.setup_data.table_queries import PARTITIONED_TABLES
+from scripts.setup_data.table_queries import PARTITIONED_TABLES, CREATE_TABLE_QUERIES
 from db import create_database_connection
 
 
@@ -47,62 +47,73 @@ def read_csv_data(csv_path: str) -> tuple[List[str], List[Dict[str, Any]]]:
         raise RuntimeError(f"Failed to read CSV file {csv_path}: {e}")
 
 
-def create_insert_query(table: str, columns: List[str], rows: List[Dict[str, Any]], batch_size: int = 1000) -> List[str]:
-    """Create INSERT statements for the data, batching for better performance."""
-    queries = []
-    
-    for i in range(0, len(rows), batch_size):
-        batch = rows[i:i + batch_size]
-        values_list = []
-        
-        for row in batch:
-            # Handle NULL values and escape strings
-            values = []
-            for col in columns:
-                val = row.get(col, '')
-                if val == '':
-                    values.append('NULL')
-                elif isinstance(val, (int, float)):
-                    values.append(str(val))
-                else:
-                    # Escape single quotes and properly quote string values
-                    val = str(val).replace("'", "''")
-                    values.append(f"'{val}'")
-            
-            values_list.append(f"({', '.join(values)})")
-        
-        query = f"""
-            INSERT INTO {table} ({', '.join(columns)})
-            VALUES {', '.join(values_list)};
-        """
-        queries.append(query)
-    
-    return queries
-
-
-async def setup_import_context(db: Database) -> None:
-    """Set up the database context for importing data."""
+async def create_import_functions(db: Database) -> None:
+    """Create helper functions for data import."""
     try:
-        # Set role to superuser which has BYPASSRLS privilege
-        await db.execute(text("SET ROLE superuser;"))
-        await db.execute(text("SET statement_timeout = 0;"))  # No timeout for bulk imports
+        # Create a function to truncate tables
+        await db.execute(text("""
+            CREATE OR REPLACE FUNCTION truncate_table(table_name text)
+            RETURNS void
+            LANGUAGE plpgsql
+            SECURITY DEFINER
+            SET search_path = public
+            AS $$
+            BEGIN
+                EXECUTE format('TRUNCATE TABLE %I CASCADE', table_name);
+            END;
+            $$;
+        """))
+
+        # Create functions for each table to insert data
+        for table in CREATE_TABLE_QUERIES:
+            await db.execute(text(f"""
+                CREATE OR REPLACE FUNCTION insert_into_{table}(
+                    column_names text[],
+                    values_list text[]
+                )
+                RETURNS void
+                LANGUAGE plpgsql
+                SECURITY DEFINER
+                SET search_path = public
+                AS $$
+                DECLARE
+                    insert_sql text;
+                BEGIN
+                    insert_sql := format(
+                        'INSERT INTO {table} (%s) VALUES (%s)',
+                        array_to_string(column_names, ', '),
+                        array_to_string(values_list, ', ')
+                    );
+                    EXECUTE insert_sql;
+                END;
+                $$;
+            """))
     except Exception as e:
-        raise RuntimeError(f"Failed to set up import context: {e}")
+        raise RuntimeError(f"Failed to create import functions: {e}")
+
+
+def prepare_value(val: Any) -> str:
+    """Prepare a value for SQL insertion."""
+    if val == '':
+        return 'NULL'
+    elif isinstance(val, (int, float)):
+        return str(val)
+    else:
+        # Escape single quotes and properly quote string values
+        val = str(val).replace("'", "''")
+        return f"'{val}'"
 
 
 async def load_table_data(db: Database, table: str, csv_path: str) -> None:
-    """Load data into a table from a CSV file."""
+    """Load data into a table from a CSV file using security definer functions."""
     try:
         if table in PARTITIONED_TABLES:
             vehicle_ids = get_vehicle_ids_from_csv(csv_path)
             for vehicle_id in vehicle_ids:
                 await create_vehicle_partition(db, vehicle_id, table)
         
-        # Set up import context
-        await setup_import_context(db)
-        
-        # Truncate the table first
-        await db.execute(text(f'TRUNCATE TABLE {table} CASCADE'))
+        # Truncate the table using the security definer function
+        await db.execute(text(f"SELECT truncate_table('{table}');"))
         
         # Read CSV data
         columns, rows = read_csv_data(csv_path)
@@ -111,9 +122,17 @@ async def load_table_data(db: Database, table: str, csv_path: str) -> None:
             return
 
         # Import data in batches
-        queries = create_insert_query(table, columns, rows)
-        for query in queries:
-            await db.execute(text(query))
+        batch_size = 1000
+        for i in range(0, len(rows), batch_size):
+            batch = rows[i:i + batch_size]
+            for row in batch:
+                # Prepare column names and values
+                values = [prepare_value(row.get(col, '')) for col in columns]
+                # Use the security definer function to insert
+                await db.execute(text(
+                    f"SELECT insert_into_{table}(:columns, :values);",
+                    {"columns": columns, "values": values}
+                ))
             
     except Exception as e:
         raise RuntimeError(f"Failed to load data into table {table}: {e}")
@@ -122,7 +141,9 @@ async def load_table_data(db: Database, table: str, csv_path: str) -> None:
 async def import_data(db: Database, csv_dir: str) -> None:
     """Import data from CSV files into database tables."""
     print(f"\nImporting data from {csv_dir}...")
-    from scripts.setup_data.table_queries import CREATE_TABLE_QUERIES
+    
+    # First create the helper functions
+    await create_import_functions(db)
     
     for table in CREATE_TABLE_QUERIES:
         csv_path = os.path.join(csv_dir, f"{table}.csv")
