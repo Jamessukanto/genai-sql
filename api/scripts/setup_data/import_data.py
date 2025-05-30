@@ -10,6 +10,17 @@ from scripts.setup_data.table_queries import PARTITIONED_TABLES, CREATE_TABLE_QU
 from db import create_database_connection
 
 
+# Define table dependencies (tables that need to be imported first)
+TABLE_DEPENDENCIES = {
+    'alerts': ['vehicles', 'fleets'],
+    'vehicles': ['fleets'],
+    'trips': ['vehicles', 'fleets']
+}
+
+# Define the order of table imports
+IMPORT_ORDER = ['fleets', 'vehicles', 'alerts', 'trips']
+
+
 async def create_vehicle_partition(db: Database, vehicle_id: str, table: str) -> None:
     """Create a partition for a specific vehicle in a partitioned table."""
     try:
@@ -160,17 +171,33 @@ async def load_table_data(db: Database, table: str, csv_path: str) -> None:
 
 
 async def import_data(db: Database, csv_dir: str) -> None:
-    """Import data from CSV files into database tables."""
+    """Import data from CSV files into the database."""
     print(f"\nImporting data from {csv_dir}...")
     
     # First create the helper functions
     await create_import_functions(db)
     
-    for table in CREATE_TABLE_QUERIES:
+    # Import tables in the correct order
+    for table in IMPORT_ORDER:
+        if table not in CREATE_TABLE_QUERIES:
+            print(f"Warning: Table '{table}' not found in CREATE_TABLE_QUERIES, skipping...")
+            continue
+            
         csv_path = os.path.join(csv_dir, f"{table}.csv")
         if not os.path.exists(csv_path):
             print(f"Warning: CSV file not found for table {table}")
             continue
+            
+        # Check if dependencies are satisfied
+        if table in TABLE_DEPENDENCIES:
+            for dep_table in TABLE_DEPENDENCIES[table]:
+                dep_csv = os.path.join(csv_dir, f"{dep_table}.csv")
+                if not os.path.exists(dep_csv):
+                    raise RuntimeError(
+                        f"Cannot import {table}: Missing dependency {dep_table} "
+                        f"(CSV file not found: {dep_csv})"
+                    )
+                    
         print(f"Loading data into '{table}'...")
         await load_table_data(db, table, csv_path)
 
