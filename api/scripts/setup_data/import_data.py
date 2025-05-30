@@ -18,7 +18,7 @@ async def create_vehicle_partition(db: Database, vehicle_id: str, table: str) ->
             CREATE TABLE IF NOT EXISTS {partition_name}
             PARTITION OF {table} FOR VALUES IN ('{vehicle_id}');
         """
-        await db.execute(text(ddl))
+        await db.execute(query=ddl)
     except Exception as e:
         raise RuntimeError(f"Failed to create partition for vehicle {vehicle_id} in table {table}: {e}")
 
@@ -51,7 +51,7 @@ async def create_import_functions(db: Database) -> None:
     """Create helper functions for data import."""
     try:
         # Create a function to truncate tables
-        await db.execute(text("""
+        await db.execute(query="""
             CREATE OR REPLACE FUNCTION truncate_table(table_name text)
             RETURNS void
             LANGUAGE plpgsql
@@ -62,11 +62,11 @@ async def create_import_functions(db: Database) -> None:
                 EXECUTE format('TRUNCATE TABLE %I CASCADE', table_name);
             END;
             $$;
-        """))
+        """)
 
         # Create functions for each table to insert data
         for table in CREATE_TABLE_QUERIES:
-            await db.execute(text(f"""
+            await db.execute(query=f"""
                 CREATE OR REPLACE FUNCTION insert_into_{table}(
                     column_names text,
                     values_list text
@@ -84,7 +84,7 @@ async def create_import_functions(db: Database) -> None:
                     );
                 END;
                 $$;
-            """))
+            """)
     except Exception as e:
         raise RuntimeError(f"Failed to create import functions: {e}")
 
@@ -110,7 +110,10 @@ async def load_table_data(db: Database, table: str, csv_path: str) -> None:
                 await create_vehicle_partition(db, vehicle_id, table)
         
         # Truncate the table using the security definer function
-        await db.execute(text("SELECT truncate_table(:table_name)"), {"table_name": table})
+        await db.execute(
+            query="SELECT truncate_table(:table_name)",
+            values={"table_name": table}
+        )
         
         # Read CSV data
         columns, rows = read_csv_data(csv_path)
@@ -130,8 +133,8 @@ async def load_table_data(db: Database, table: str, csv_path: str) -> None:
                 values_str = ', '.join(values)
                 # Use the security definer function to insert
                 await db.execute(
-                    text(f"SELECT insert_into_{table}(:column_names, :value_list)"),
-                    {"column_names": column_names_str, "value_list": values_str}
+                    query=f"SELECT insert_into_{table}(:column_names, :value_list)",
+                    values={"column_names": column_names_str, "value_list": values_str}
                 )
             
     except Exception as e:
