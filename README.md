@@ -1,14 +1,15 @@
 # EV Fleet Analytics AI Assistant
 
-A natural language interface for querying electric vehicle fleet telemetry data, powered by 'mistral-medium-latest'. 
+A natural language interface for querying electric vehicle fleet telemetry data. 
 
 ## 🌟 Features
 
 - Natural language to SQL conversion for fleet analytics
-- Row-level security ensuring fleets only access their own data
+- LangGraph-based LLM agent with 'mistral-medium-latest'
+- PostgreSQL with row-level security, ensuring fleets only access their own data
 - Real-time telemetry analysis (SOC, temperature, usage patterns)
 - JWT-based authentication
-- Web UI
+- Simple Web UI
 
 ## 🏗 Architecture
 
@@ -22,12 +23,6 @@ A natural language interface for querying electric vehicle fleet telemetry data,
        └────────────────────────────────────────┘
 ```
 
-Key Components:
-- FastAPI backend with authentication and API routing
-- LangChain-based LLM agent for natural language processing
-- PostgreSQL with row-level security for data isolation
-- Simple HTML/CSS frontend for demo purposes
-
 ## 📁 Project Structure
 
 ```
@@ -36,58 +31,76 @@ api/
 │   ├── llm/          # LLM agent and semantic mapping
 │   ├── services/     # Auth, SQL, and chat services
 │   └── main.py       # FastAPI application
+│   └── ssl/
+│       └── setup-certs.sh
+├── data/         
 ├── frontend/         
 ├── scripts/         
 │   └── setup_data/   # Database setup and data import
-├── tests/            # Integration tests
+├── tests/            # Tests and pytest config
+│   └── pytest.ini
 └── requirements.txt
 ```
 
+
+
 ## 🚀 Quick Start
 
-### Using Docker (Recommended)
-
-1. Prerequisites:
-   - Docker and Docker Compose installed
-   - Sample data files in `./data` directory
-
-2. Start Services:
+### 1. Clone the repository:
    ```bash
-   # Clone and enter the repository
-   git clone <repository-url>
-   cd ev-fleet-analytics
-
-   # Start PostgreSQL and API services
-   docker-compose up -d
+   git clone https://github.com/Jamessukanto/genai-sql.git
+   cd genai-sql
    ```
 
-3. Setup Database:
+### 2. Development:
+
    ```bash
-   # Wait for services to be healthy, then:
-   curl -X POST http://localhost:8000/api/sql/setup
+   # Set your mistral api
+   export MISTRAL_API_KEY=your_mistral_api_key
+
+   # Start FastAPI and PostgreSQL services (This seeds sample data, too!)
+   make dev
+   ```
+
+   Verify Row-Level Security (RLS) manually
+   ```bash
+   docker-compose exec db psql -U end_user -d fleetdb; 
+
+   # Simulate RLS by setting the fleet ID context
+   SET app.fleet_id = '1';
+
+   # Expected return: Only rows where fleet_id = '1' (3 rows)
+   SELECT * FROM vehicles;
+
+   \q
+   ```
+
+   Web UI check for RLS 
+   Go to http://localhost:8000/app/ and submit
+
+
+   Verify RLS via Web UI
+   Open the app in your browser: http://localhost:8000/app/
    
-   # Import sample data
-   curl -X POST http://localhost:8000/api/sql/import_data \
-        -H "Content-Type: application/json" \
-        -d '{"csv_dir": "/app/data"}'
+   Submit a prompt like: "How many SRM T3 EVs are in my fleet?"
+   The answer should return
+   → '2' if fleet_id=1
+   → '0' if fleet_id=2
+   
+   ```bash
+
+   # Clean up (This remove volumes, too)
+   make clean
    ```
 
+### 3. Testing:
+   ```bash
+   # Run tests against local environment
+   make test-local
 
-
-## 🧪 Testing
-
-Run the test suite:
-```bash
-cd api
-pip install -r tests/requirements-test.txt
-python -m pytest tests/test_mandatory_queries.py -v
-```
-
-The tests cover:
-- Natural language query processing
-- Authentication and authorization
-- Row-level security
-- Data accuracy and consistency
+   # Run tests against production
+   make test
+   ```
 
 ## 📝 API Examples
 

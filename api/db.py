@@ -6,6 +6,7 @@ from sqlalchemy.engine import Engine
 from dotenv import load_dotenv
 from urllib.parse import urlparse, parse_qs, urlunparse, urlencode
 from typing import Optional
+import time
 
 # load_dotenv(override=True)
 
@@ -19,25 +20,9 @@ def get_database_url() -> str:
     parsed = urlparse(url)
     params = parse_qs(parsed.query)
     
-    # Update SSL parameters for Render's PostgreSQL
-    # Use require mode which verifies SSL is used but doesn't verify certificates
-    ssl_params = {
-        'sslmode': 'require'  # Only require SSL without certificate verification
-    }
-    
-    # Update or add SSL parameters
-    for key, value in ssl_params.items():
-        params[key] = [value]
-    
-    # Reconstruct the URL with updated parameters
-    new_query = urlencode(params, doseq=True)
-    new_url = urlunparse(
-        (parsed.scheme, parsed.netloc, parsed.path, 
-         parsed.params, new_query, parsed.fragment)
-    )
-
+    # Keep existing SSL parameters from the URL
     print(f"Connecting to database: {parsed.hostname}")
-    return new_url
+    return url
 
 def get_ssl_context():
     """Create an SSL context that accepts self-signed certificates."""
@@ -46,27 +31,26 @@ def get_ssl_context():
     ctx.verify_mode = ssl.CERT_NONE
     return ctx
 
-def create_database_connection(url: Optional[str] = None, **kwargs) -> Database:
+def create_database_connection(url: Optional[str] = None, max_retries: int = 5, retry_delay: int = 5) -> Database:
     """
-    Create a database connection with consistent SSL configuration.
-    
-    Args:
-        url: Optional database URL. If not provided, uses DATABASE_URL from environment
-        **kwargs: Additional arguments to pass to Database constructor
-    
-    Returns:
-        Database: Configured database connection
+    Create a database connection with consistent SSL configuration and retry logic.
     """
     db_url = url or get_database_url()
     ssl_context = get_ssl_context()
     
-    return Database(
-        db_url,
-        min_size=1,
-        max_size=4,
-        ssl=ssl_context,
-        **kwargs
-    )
+    for attempt in range(max_retries):
+        try:
+            return Database(
+                db_url,
+                min_size=1,
+                max_size=4,
+                ssl=ssl_context,
+            )
+        except Exception as e:
+            if attempt == max_retries - 1:
+                raise
+            print(f"Database connection attempt {attempt + 1} failed: {e}")
+            time.sleep(retry_delay)
 
 # Initialize database connection
 DATABASE_URL = get_database_url()

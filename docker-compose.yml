@@ -4,13 +4,21 @@ services:
   db:
     image: postgres:15
     environment:
+      # Only for local development.
       POSTGRES_DB: fleetdb
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./ssl:/var/lib/postgresql/certs:ro
+    user: postgres
+    command: >
+      postgres 
+      -c ssl=on 
+      -c ssl_cert_file=/var/lib/postgresql/certs/server.crt 
+      -c ssl_key_file=/var/lib/postgresql/certs/server.key
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -22,15 +30,13 @@ services:
       context: ./api
       dockerfile: Dockerfile
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/fleetdb
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/fleetdb?sslmode=require
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY}
     ports:
       - "8000:8000"
-    depends_on:
-      db:
-        condition: service_healthy
     volumes:
       - ./api:/app
-      - ./data:/app/data
+      - ./ssl:/var/lib/postgresql/certs:ro
 
 volumes:
   postgres_data:
