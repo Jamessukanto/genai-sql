@@ -177,29 +177,61 @@ async def import_data(db: Database, csv_dir: str) -> None:
     # First create the helper functions
     await create_import_functions(db)
     
-    # Import tables in the correct order
+    # First, check which CSV files are actually available
+    available_csvs = {}
+    missing_csvs = []
     for table in IMPORT_ORDER:
         if table not in CREATE_TABLE_QUERIES:
             print(f"Warning: Table '{table}' not found in CREATE_TABLE_QUERIES, skipping...")
             continue
             
         csv_path = os.path.join(csv_dir, f"{table}.csv")
-        if not os.path.exists(csv_path):
-            print(f"Warning: CSV file not found for table {table}")
+        if os.path.exists(csv_path):
+            available_csvs[table] = csv_path
+        else:
+            missing_csvs.append(table)
+            print(f"Note: CSV file not found for table '{table}', skipping...")
+    
+    if not available_csvs:
+        raise RuntimeError(f"No valid CSV files found in directory: {csv_dir}")
+    
+    print("\nFound the following CSV files:")
+    for table in available_csvs:
+        print(f"- {table}.csv")
+    
+    if missing_csvs:
+        print("\nMissing CSV files (these tables will be skipped):")
+        for table in missing_csvs:
+            print(f"- {table}.csv")
+    
+    # Import tables in order, but only those that have CSV files
+    for table in IMPORT_ORDER:
+        if table not in available_csvs:
             continue
             
-        # Check if dependencies are satisfied
+        # Check dependencies only against available CSV files
         if table in TABLE_DEPENDENCIES:
+            missing_deps = []
             for dep_table in TABLE_DEPENDENCIES[table]:
-                dep_csv = os.path.join(csv_dir, f"{dep_table}.csv")
-                if not os.path.exists(dep_csv):
-                    raise RuntimeError(
-                        f"Cannot import {table}: Missing dependency {dep_table} "
-                        f"(CSV file not found: {dep_csv})"
-                    )
+                if dep_table not in available_csvs:
+                    missing_deps.append(dep_table)
+            
+            if missing_deps:
+                print(f"\nSkipping '{table}' due to missing dependencies: {', '.join(missing_deps)}")
+                print(f"Note: To import '{table}', you need CSV files for: {', '.join(TABLE_DEPENDENCIES[table])}")
+                continue
                     
-        print(f"Loading data into '{table}'...")
-        await load_table_data(db, table, csv_path)
+        print(f"\nLoading data into '{table}'...")
+        await load_table_data(db, table, available_csvs[table])
+    
+    print("\nImport summary:")
+    print("Successfully processed the following tables:")
+    for table in available_csvs:
+        print(f"- {table}")
+    if missing_csvs:
+        print("\nSkipped tables (CSV files not found):")
+        for table in missing_csvs:
+            print(f"- {table}")
 
 
 async def main(csv_dir: str, existing_db: Database = None) -> None:
