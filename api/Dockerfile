@@ -6,9 +6,11 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     gcc \
     postgresql-client \
+    openssl \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first to leverage Docker cache
+# Leverage Docker cache
 COPY requirements.txt .
 COPY tests/requirements-test.txt .
 
@@ -16,11 +18,17 @@ COPY tests/requirements-test.txt .
 RUN pip install --no-cache-dir -r requirements.txt \
     && pip install --no-cache-dir -r requirements-test.txt
 
-# Copy the rest of the application
+# Copy api folder
 COPY . .
 
-# Expose the port the app runs on
-EXPOSE 8000
+# Ensure scripts directory exists and has correct permissions
+RUN mkdir -p /app/scripts \
+    && find /app/scripts -type f -name "*.sh" -exec chmod +x {} \; \
+    && ls -la /app/scripts/
 
-# Command to run the application
+# Create certs directory with correct permissions
+RUN mkdir -p /var/lib/postgresql/certs && \
+    chown -R 999:999 /var/lib/postgresql/certs
+
+EXPOSE 8000
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"] 

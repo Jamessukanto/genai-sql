@@ -1,8 +1,12 @@
+
+################################ RENDER #################################
+
+
 # Setup database
-curl -X POST https://genai-sql-1.onrender.com/sql/api/setup
+curl -X POST https://genai-sql-1.onrender.com/api/sql/setup
 
 # Import data
-curl -X POST https://genai-sql-1.onrender.com/api/sql/import_data -H "Content-Type: application/json" -d '{"csv_dir": "data_throw"}'
+curl -X POST https://genai-sql-1.onrender.com/api/sql/import_data -H "Content-Type: application/json" -d '{"csv_dir": "/data_throw"}'
 
 # Generate JWT token
 curl -X POST https://genai-sql-1.onrender.com/api/auth/generate_jwt_token 
@@ -25,36 +29,10 @@ curl -X POST "$API_URL/sql/execute" \
      -H "Authorization: Bearer $TOKEN" \
      -d '{"sql": "SELECT * FROM alerts"}'
 
-
+python -m pytest tests/test_mandatory_queries.py -v
 
 
 ################################# LOCAL #################################
-
-# Setup database
-curl -X POST https://genai-sql-1.onrender.com/api/sql/setup
-curl -X POST https://genai-sql-1.onrender.com/api/sql/import_data -H "Content-Type: application/json" -d '{"csv_dir": "/data_throw"}'
-
-
-# Execute SQL query
-API_URL="https://genai-sql-1.onrender.com/api" && \
-CONTENT_HEADER="Content-Type: application/json" && \
-
-TOKEN=$( \
-curl -s -X POST "$API_URL/auth/generate_jwt_token" \
-    -H "$CONTENT_HEADER" \
-    -d '{"sub": "superuser", "fleet_id": "fleet1", "exp_hours": 1}' \
-| jq -r '.token') && \
-
-curl -X POST "$API_URL/sql/execute" \
-     -H "$CONTENT_HEADER" \
-     -H "Authorization: Bearer $TOKEN" \
-     -d '{"sql": "SELECT * FROM alerts"}'
-
-
-
-
-
-
 
 
 
@@ -100,19 +78,33 @@ curl -X POST http://localhost:8000/chat/execute_user_query \
 "What is the fleet‐wide average SOC comfort zone?"
 "Which vehicles spent > 20 % time in the 90‐100 % SOC band this week?"
 "How many vehicles are currently driving with SOC < 30 %?"
-"What is the total km and driving hours by my fleet over the past 7 days, and which
-are the most-used & least-used vehicles?"
+"What is the total km and driving hours by my fleet over the past 7 days, and which are the most-used & least-used vehicles?"
 
 
 
 
-# CONTAINER
-docker-compose down && docker-compose up --build -d && \
+# LOCAL CONTAINER
+docker-compose down && docker-compose up --build -d 
+
 docker-compose logs --tail=222 api
+
+
+# Setup database
+docker-compose run --rm api \
+  python api/scripts/setup_data/setup_database.py \
+    --drop-existing 
+
 
 # Import data
 docker-compose run --rm api python import_data.py --init
-docker-compose run --rm api python import_data.py --load-all
+
+
+
+
+
+
+
+
 
 
 # Access psql

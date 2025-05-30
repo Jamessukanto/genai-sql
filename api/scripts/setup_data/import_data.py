@@ -218,32 +218,47 @@ async def import_data(db: Database, csv_dir: str) -> None:
     print("\nImport complete!")
 
 
-async def main(csv_dir: str, existing_db: Database = None) -> None:
+async def main(csv_dir: str, db: Database = None) -> None:
     """Import data from CSV files into the database."""
     if not csv_dir:
         raise ValueError("CSV directory path is required")
-    
-    csv_dir = os.path.abspath(csv_dir)
+    print()
+    print()
+    print()
+    print("HA")
+    print("csv_dir", csv_dir)
+    print("db", db)
+    print()
+
+
+
+
+    # csv_dir = os.path.abspath(csv_dir)
+    print(csv_dir)
+    print("csv_dir after abs", csv_dir)
+
+    print()
     if not os.path.isdir(csv_dir):
         raise ValueError(f"CSV directory does not exist: {csv_dir}")
 
     try:
         # Initialize database connection
-        db = existing_db
         if not db:
+            print("NO DB, creating...")
             db = create_database_connection()
             await db.connect()
 
+        print("csv_dir", csv_dir)
+        print("db", db)
+        print()
         # Import data
         await import_data(db, csv_dir)
         print("Data import complete!")
 
     except Exception as e:
-        print(f"\nError: {e}")
-        raise
+        raise RuntimeError(f"Failed to import data: {e}")
     finally:
-        if not existing_db and db:
-            await db.disconnect()
+        await db.disconnect()
 
 
 if __name__ == "__main__":
