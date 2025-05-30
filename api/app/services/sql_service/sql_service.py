@@ -98,4 +98,50 @@ async def setup_database():
         )
 
 
+@sql_router.post("/import_data")
+async def import_data():
+    """
+    Import data from CSV files into the database.
+    Note: CSV files should be present in the data directory.
+    """
+    try:
+        # Get the absolute path to the data directory
+        data_dir = os.path.abspath(
+            os.path.join(
+                os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
+                "data"
+            )
+        )
+        if not os.path.exists(data_dir):
+            raise HTTPException(
+                status_code=400, 
+                detail={
+                    "status": "error",
+                    "message": f"Data directory not found at {data_dir}"
+                }
+            )
+
+        print(f"Importing data from '{data_dir}'...")
+        
+        # Import the data
+        await import_data_main(csv_dir=data_dir)
+        
+        return {
+            "status": "success",
+            "message": "Data import completed successfully",
+            "details": {
+                "data_directory": data_dir
+            }
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, 
+            detail={
+                "status": "error",
+                "message": f"Failed to import data: {str(e)}"
+            }
+        )
+
+
 
