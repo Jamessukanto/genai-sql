@@ -1,23 +1,13 @@
 # Setup database
 curl -X POST https://genai-sql-1.onrender.com/sql/setup
 
+# Import data
+curl -X POST https://genai-sql-1.onrender.com/api/sql/import_data -H "Content-Type: application/json" -d '{"csv_dir": "data_throw"}'
 
-python -m scripts.setup_data.import_data --csv-dir data_throw
-
-# Execute SQL
-API_URL="https://genai-sql-1.onrender.com/api" && \
-CONTENT_HEADER="Content-Type: application/json" && \
-
-TOKEN=$( \
-curl -s -X POST "$API_URL/auth/generate_jwt_token" \
-    -H "$CONTENT_HEADER" \
-    -d '{"sub": "superuser", "fleet_id": "fleet1", "exp_hours": 1}' \
-| sed -n 's/.*"token":"\([^"]*\)".*/\1/p' ) && \
-
-curl -X POST "$API_URL/sql/execute" \
-     -H "$CONTENT_HEADER" \
-     -H "Authorization: Bearer $TOKEN" \
-     -d '{"sql": "SELECT * FROM alerts"}'
+# Generate JWT token
+curl -X POST https://genai-sql-1.onrender.com/api/auth/generate_jwt_token 
+-H "Content-Type: application/json" 
+-d '{"sub": "superuser", "fleet_id": "fleet1", "exp_hours": 24}'
 
 
 # Execute SQL
@@ -34,6 +24,34 @@ curl -X POST "$API_URL/sql/execute" \
      -H "$CONTENT_HEADER" \
      -H "Authorization: Bearer $TOKEN" \
      -d '{"sql": "SELECT * FROM alerts"}'
+
+
+
+
+################################# LOCAL #################################
+
+# Setup database
+curl -X POST https://genai-sql-1.onrender.com/api/sql/setup
+curl -X POST https://genai-sql-1.onrender.com/api/sql/import_data -H "Content-Type: application/json" -d '{"csv_dir": "/data_throw"}'
+
+
+# Execute SQL query
+API_URL="https://genai-sql-1.onrender.com/api" && \
+CONTENT_HEADER="Content-Type: application/json" && \
+
+TOKEN=$( \
+curl -s -X POST "$API_URL/auth/generate_jwt_token" \
+    -H "$CONTENT_HEADER" \
+    -d '{"sub": "superuser", "fleet_id": "fleet1", "exp_hours": 1}' \
+| jq -r '.token') && \
+
+curl -X POST "$API_URL/sql/execute" \
+     -H "$CONTENT_HEADER" \
+     -H "Authorization: Bearer $TOKEN" \
+     -d '{"sql": "SELECT * FROM alerts"}'
+
+
+
 
 
 
