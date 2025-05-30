@@ -21,7 +21,7 @@ load-data:
 	$(MAKE) debug-paths
 	docker-compose run --rm api \
 		python -m scripts.setup_data.import_data \
-		--csv-dir ./data
+		--csv-dir /app/data
 
 # Debug container paths
 debug-paths:
@@ -34,7 +34,7 @@ clean:
 
 # Run tests against production
 test:
-	docker-compose run --rm api pytest
+	docker-compose run --rm api pytest -s
 
 # Run tests against local environment
 test-local: setup-certs
@@ -42,7 +42,7 @@ test-local: setup-certs
 	docker-compose run --rm \
 		-e API_URL=http://api:8000/api \
 		-e PYTHONPATH=/app \
-		api pytest -v tests/
+		api pytest -sv tests/
 
 # Setup ssl certificates in the ssl directory
 setup-certs:
