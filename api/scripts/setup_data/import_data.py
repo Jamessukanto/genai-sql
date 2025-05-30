@@ -129,11 +129,15 @@ async def load_table_data(db: Database, table: str, csv_path: str) -> None:
                 # Prepare column names and values
                 values = [prepare_value(row.get(col, '')) for col in columns]
                 # Use the security definer function to insert
-                await db.execute(text(
-                    f"SELECT insert_into_{table}(:columns, :values);",
+                # await db.execute(text(
+                #     f"SELECT insert_into_{table}(:columns, :values);",
+                #     {"columns": columns, "values": values}
+                # ))
+                await db.execute(
+                    text(f"SELECT insert_into_{table}(:columns, :values);"),
                     {"columns": columns, "values": values}
-                ))
-            
+                )
+
     except Exception as e:
         raise RuntimeError(f"Failed to load data into table {table}: {e}")
 
