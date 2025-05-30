@@ -92,7 +92,7 @@ async def setup_database():
         }
 
     except Exception as e:
-        raise HTTPException(
+        raise Runtime(
             status_code=500, 
             detail={
                 "status": "error",
@@ -110,7 +110,7 @@ async def import_data(req: ImportDataRequest):
     try:
         csv_dir = os.path.abspath(req.csv_dir)
         if not os.path.exists(csv_dir):
-            raise HTTPException(
+            raise Runtime(
                 status_code=400, 
                 detail={
                     "status": "error",
@@ -130,7 +130,7 @@ async def import_data(req: ImportDataRequest):
         }
 
     except Exception as e:
-        raise HTTPException(
+        raise Runtime(
             status_code=500, 
             detail={
                 "status": "error",

@@ -23,7 +23,10 @@ async def generate_jwt_token(
             "fleet_id": fleet_id,
             "exp": datetime.utcnow() + timedelta(hours=exp_hours)
         }
+        # Ensure token is encoded as string and properly formatted
         token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
+        if isinstance(token, bytes):
+            token = token.decode('utf-8')
         return {"token": token}
     
     except Exception as e:
