@@ -9,12 +9,12 @@ SOC:
     - raw_telemetry.soc_pct
     - charging_sessions.start_soc
     - charging_sessions.end_soc
-    - processed_metrics.soc_band
+    - processed_metrics.soc_band (enum)
 "SOC comfort zone":
   description: "Healthy operating band for SOC"
   columns:
     - fleet_daily_summary.avg_soc_pct
-    - processed_metrics.soc_band
+    - processed_metrics.soc_band (enum) 
 "SRM T3":
   description: "Vehicle model filter for SRM T3 vans"
   columns:

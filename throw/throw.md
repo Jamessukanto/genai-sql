@@ -191,7 +191,19 @@ Fleet / Vehicle / Driver hierarchy; fleets → vehicles → trips / alerts / tel
 
 
 
-
+fleets
+vehicles
+raw_telemetry
+processed_metrics
+charging_sessions
+trips
+alerts
+battery_cycles
+maintenance_logs
+drivers
+driver_trip_map
+geofence_events
+fleet_daily_summary
 
 Table; Module; Key columns (PK 🔑, FK ↗)
 
@@ -221,3 +233,4 @@ driver_trip_map; Driver–Trip link; trip_id↗trips, driver_id↗drivers, prima
 geofence_events; Geospatial; event_id🔑, vehicle_id↗vehicles, geofence_name, enter_ts, exit_ts
 
 fleet_daily_summary; Reports & Exports (materialised); fleet_id↗fleets, date, total_distance_km, total_energy_kwh, active_vehicles, avg_soc_pct
+
