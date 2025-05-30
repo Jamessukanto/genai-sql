@@ -210,3 +210,6 @@ if __name__ == "__main__":
 
     asyncio.run(main(args.csv_dir))
 
+
+
+python -m scripts.setup_data.import_data --csv-dir data_throw
