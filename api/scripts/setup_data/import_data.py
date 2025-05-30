@@ -59,17 +59,17 @@ async def create_import_functions(db: Database) -> None:
             SET search_path = public
             AS $$
             DECLARE
-                original_role text;
+                original_user text;
             BEGIN
-                -- Store current role and switch to database owner
-                original_role := session_user;
-                EXECUTE 'SET LOCAL ROLE postgres';
+                -- Store current user and switch to database owner
+                original_user := session_user;
+                EXECUTE 'SET LOCAL SESSION AUTHORIZATION DEFAULT';
                 
                 -- Perform truncate
                 EXECUTE format('TRUNCATE TABLE %I CASCADE', table_name);
                 
-                -- Restore original role
-                EXECUTE format('SET LOCAL ROLE %I', original_role);
+                -- Restore original user
+                EXECUTE format('SET LOCAL SESSION AUTHORIZATION %I', original_user);
             END;
             $$;
         """)
@@ -87,11 +87,11 @@ async def create_import_functions(db: Database) -> None:
                 SET search_path = public
                 AS $$
                 DECLARE
-                    original_role text;
+                    original_user text;
                 BEGIN
-                    -- Store current role and switch to database owner
-                    original_role := session_user;
-                    EXECUTE 'SET LOCAL ROLE postgres';
+                    -- Store current user and switch to database owner
+                    original_user := session_user;
+                    EXECUTE 'SET LOCAL SESSION AUTHORIZATION DEFAULT';
                     
                     -- Perform insert
                     EXECUTE format(
@@ -100,8 +100,8 @@ async def create_import_functions(db: Database) -> None:
                         values_list
                     );
                     
-                    -- Restore original role
-                    EXECUTE format('SET LOCAL ROLE %I', original_role);
+                    -- Restore original user
+                    EXECUTE format('SET LOCAL SESSION AUTHORIZATION %I', original_user);
                 END;
                 $$;
             """)
@@ -129,8 +129,8 @@ async def load_table_data(db: Database, table: str, csv_path: str) -> None:
             for vehicle_id in vehicle_ids:
                 await create_vehicle_partition(db, vehicle_id, table)
         
-        # Set role to postgres temporarily
-        await db.execute(query="SET LOCAL ROLE postgres")
+        # Switch to database owner temporarily
+        await db.execute(query="SET LOCAL SESSION AUTHORIZATION DEFAULT")
         
         try:
             # Truncate the table using the security definer function
@@ -161,8 +161,8 @@ async def load_table_data(db: Database, table: str, csv_path: str) -> None:
                         values={"column_names": column_names_str, "value_list": values_str}
                     )
         finally:
-            # Reset role back to original
-            await db.execute(query="RESET ROLE")
+            # Reset session authorization back to original
+            await db.execute(query="RESET SESSION AUTHORIZATION")
             
     except Exception as e:
         raise RuntimeError(f"Failed to load data into table {table}: {e}")
