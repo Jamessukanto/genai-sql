@@ -56,17 +56,7 @@ def read_csv_data(csv_path: str) -> tuple[List[str], List[Dict[str, Any]]]:
             return columns, rows
     except Exception as e:
         raise RuntimeError(f"Failed to read CSV file {csv_path}: {e}")
-
-
-async def disable_rls(db: Database, table: str) -> None:
-    """Temporarily disable RLS on a table."""
-    await db.execute(query=f"ALTER TABLE {table} DISABLE ROW LEVEL SECURITY")
-
-
-async def enable_rls(db: Database, table: str) -> None:
-    """Re-enable RLS on a table."""
-    await db.execute(query=f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY")
-
+    
 
 async def create_import_functions(db: Database) -> None:
     """Create helper functions for data import."""
@@ -98,12 +88,7 @@ async def create_import_functions(db: Database) -> None:
                 SET search_path = public
                 AS $$
                 BEGIN
-                    -- Direct table access with SECURITY DEFINER privileges
-                    EXECUTE format(
-                        'INSERT INTO {table} (%s) VALUES (%s)',
-                        column_names,
-                        values_list
-                    );
+                    EXECUTE 'INSERT INTO {table} (' || column_names || ') VALUES (' || values_list || ')';
                 END;
                 $$;
             """)
@@ -132,7 +117,7 @@ async def load_table_data(db: Database, table: str, csv_path: str) -> None:
                 await create_vehicle_partition(db, vehicle_id, table)
         
         # Temporarily disable RLS
-        await disable_rls(db, table)
+        await db.execute(query=f"ALTER TABLE {table} DISABLE ROW LEVEL SECURITY")
         
         try:
             # Truncate the table using the security definer function
@@ -147,73 +132,41 @@ async def load_table_data(db: Database, table: str, csv_path: str) -> None:
                 print(f"Warning: No data to import for table {table}")
                 return
 
-            print(f"\nProcessing {len(rows)} rows for table {table}")
-            print(f"Columns found: {', '.join(columns)}")
+            print(f"Importing {len(rows)} rows into {table}...")
             
             # Import data in batches
             batch_size = 1000
-            rows_imported = 0
             for i in range(0, len(rows), batch_size):
                 batch = rows[i:i + batch_size]
-                try:
-                    for row in batch:
+                for row in batch:
+                    try:
                         # Prepare column names and values
                         values = [prepare_value(row.get(col, '')) for col in columns]
                         # Format column names and values as comma-separated strings
-                        column_names_str = ', '.join(columns)
+                        column_names_str = ', '.join([f'"{col}"' for col in columns])
                         values_str = ', '.join(values)
-                        
-                        # Log the first few rows for debugging
-                        if rows_imported < 3:
-                            print(f"Sample row {rows_imported + 1}: {values_str}")
                         
                         # Use the security definer function to insert
                         await db.execute(
                             query=f"SELECT insert_into_{table}(:column_names, :value_list)",
                             values={"column_names": column_names_str, "value_list": values_str}
                         )
-                        rows_imported += 1
-                except Exception as e:
-                    print(f"Error importing row in {table}: {e}")
-                    print(f"Problematic row values: {values_str}")
-                    raise
-            
-            print(f"Successfully imported {rows_imported} rows into {table}")
+                    except Exception as e:
+                        print(f"Error on row: {row}")
+                        raise
             
             # Verify the import
-            count_result = await db.fetch_one(f"SELECT COUNT(*) FROM {table}")
-            if count_result:
-                print(f"Actual row count in {table} after import: {count_result[0]}")
+            result = await db.fetch_one(f"SELECT COUNT(*) FROM {table}")
+            print(f"Imported {result[0]} rows into {table}")
             
         finally:
             # Re-enable RLS
-            await enable_rls(db, table)
+            await db.execute(query=f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY")
             
     except Exception as e:
         raise RuntimeError(f"Failed to load data into table {table}: {e}")
 
 
-def get_importable_tables(available_tables: set, imported_tables: set, dependencies: dict) -> set:
-    """
-    Find tables that can be imported in the current stage.
-    A table is importable if all its dependencies have been imported.
-    """
-    importable = set()
-    for table in available_tables:
-        if table in imported_tables:
-            continue
-        
-        # Tables with no dependencies are always importable
-        if table not in dependencies:
-            importable.add(table)
-            continue
-            
-        # Check if all dependencies are satisfied
-        deps = dependencies.get(table, set())
-        if deps.issubset(imported_tables):
-            importable.add(table)
-            
-    return importable
 
 
 async def import_data(db: Database, csv_dir: str) -> None:
