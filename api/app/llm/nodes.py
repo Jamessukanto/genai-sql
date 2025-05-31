@@ -3,7 +3,7 @@ from langchain_core.messages import AIMessage
 from langgraph.graph import MessagesState, END
 from langchain_community.utilities import SQLDatabase
 
-from app.llm.prompts import generate_query_prompt, check_query_prompt
+from app.llm.prompts import generate_query_prompt, check_query_prompt, get_schema_prompt
 from app.llm.llm_utils import load_semantic_map
 
 
@@ -30,8 +30,12 @@ class CallGetSchemaNode:
         self.get_schema_tool = get_schema_tool
 
     def __call__(self, state: MessagesState):
+        system_message = {
+            "role": "system",
+            "content": get_schema_prompt(mappings=load_semantic_map())
+        }
         llm_with_tools = self.llm.bind_tools([self.get_schema_tool], tool_choice="any")
-        response = llm_with_tools.invoke(state["messages"])
+        response = llm_with_tools.invoke([system_message] + state["messages"])
         return {"messages": [response]}
 
 class GenerateQueryNode:

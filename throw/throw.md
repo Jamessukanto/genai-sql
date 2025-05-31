@@ -21,7 +21,7 @@ CONTENT_HEADER="Content-Type: application/json" && \
 TOKEN=$( \
 curl -s -X POST "$API_URL/auth/generate_jwt_token" \
     -H "$CONTENT_HEADER" \
-    -d '{"sub": "superuser", "fleet_id": "fleet1", "exp_hours": 1}' \
+    -d '{"sub": "superuser", "fleet_id": "1", "exp_hours": 1}' \
 | sed -n 's/.*"token":"\([^"]*\)".*/\1/p' ) && \
 
 curl -X POST "$API_URL/sql/execute" \
@@ -29,37 +29,78 @@ curl -X POST "$API_URL/sql/execute" \
      -H "Authorization: Bearer $TOKEN" \
      -d '{"sql": "SELECT * FROM alerts"}'
 
-python -m pytest tests/test_mandatory_queries.py -v
+
+# Test
+python -m pytest api/tests/test_mandatory_queries.py -v
 
 
-################################# LOCAL #################################
+################################# DOCKER ################################
 
 
+# Access psql
+docker-compose exec db psql -U postgres -d fleetdb
 
-
-
-# LOCAL
-uvicorn app.main:app --host 0.0.0.0 --port 8000
-curl http://localhost:8000/ping
-
-# CREATE DB
-psql -h localhost -U postgres -d fleetdb  
-CREATE DATABASE fleetdb;
-
-# IMPORT
-python -m scripts.import_data.import_data --csv-dir ./data --drop-existing
-
-
-# CHECK RLS
 # psql
 SET app.fleet_id = '1'; SELECT * FROM vehicles;
 # Curl
 python -m scripts.generate_jwt_token --sub end_user --fleet_id 1 --out_token scripts/token.txt && \
 
-curl -X POST http://localhost:8000/sql/execute_sql \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $(cat scripts/token.txt)" \
-  -d '{"sql":"SELECT COUNT(*) FROM vehicles;"}'
+
+
+
+
+# Execute SQL
+
+export MISTRAL_API_KEY="Yu1QN6dXIncjqXWohaYYF5GOLZljDcI2"
+export API_URL="http://localhost:8000/api"
+export CONTENT_HEADER="Content-Type: application/json"
+
+# Generate JWT TOKEN ----------------------------------- 
+export USER="postgres"
+
+export USER="end_user"
+
+export USER="superuser"
+
+export FLEET_ID="1"
+
+TOKEN=$( \
+curl -s -X POST "$API_URL/auth/generate_jwt_token" \
+    -H "$CONTENT_HEADER" \
+    -d "{\"sub\": \"$USER\", \"fleet_id\": \"$FLEET_ID\", \"exp_hours\": 1}" \
+| sed -n 's/.*"token":"\([^"]*\)".*/\1/p' )
+
+
+
+# Execute user query ---------------------------------- 
+curl -X POST "$API_URL/chat/execute_user_query" \
+     -H "$CONTENT_HEADER" -H "Authorization: Bearer $TOKEN" \
+     -d '{"query":"How many SRM T3 EVs are in my fleet?"}'
+
+     -d '{"query":"What is fleet id?"}'
+     -d '{"query":"What is the SOC of vehicle GBM6296G right now?"}'
+
+
+
+
+  
+
+
+# LOCAL
+
+
+# CREATE DB
+docker-compose psql -h localhost -U postgres -d fleetdb  
+CREATE DATABASE fleetdb;
+
+################################# LOCAL #################################
+
+
+curl http://localhost:8000/ping
+
+
+# CHECK RLS
+
 
 
 
@@ -69,7 +110,6 @@ curl -X POST http://localhost:8000/chat/execute_user_query \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $(cat api/scripts/token.txt)" \
   -d '{"query":"How many SRM T3 EVs are in my fleet?"}'
-
 
 
 "How many SRM T3 EVs are in my fleet?"
@@ -107,8 +147,7 @@ docker-compose run --rm api python import_data.py --init
 
 
 
-# Access psql
-docker-compose exec db psql -U postgres -d fleetdb
+
 
 
 

@@ -55,8 +55,10 @@ api/
 ### 2. Development:
 
    ```bash
-   # Set your mistral api
-   export MISTRAL_API_KEY=your_mistral_api_key
+   # Set env vars
+   export MISTRAL_API_KEY="your_mistral_api_key"
+   export API_URL="http://localhost:8000/api"
+   export CONTENT_HEADER="Content-Type: application/json"
 
    # Start FastAPI and PostgreSQL services (This seeds sample data, too!)
    make dev
@@ -74,56 +76,48 @@ api/
 
    \q
    ```
-   #### Localhost check for RLS <br>
-   Go to http://localhost:8000/app/ and submit a prompt like: "How many SRM T3 EVs are in my fleet?" <br>
-   The answer should return
+
+   #### Generate JWT token 
+   ```bash
+   # Clean up (This remove volumes, too)
+   export USER="superuser"
+   export FLEET_ID="1"  # Available IDs are "1" and "2"
+
+    TOKEN=$( \
+    curl -s -X POST "$API_URL/auth/generate_jwt_token" \
+        -H "$CONTENT_HEADER" \
+        -d "{\"sub\": \"$USER\", \"fleet_id\": \"$FLEET_ID\", \"exp_hours\": 1}" \
+    | sed -n 's/.*"token":"\([^"]*\)".*/\1/p' )
+   ```
+
+   #### Execute user query
+   ```bash
+    curl -X POST "$API_URL/chat/execute_user_query" \
+        -H "$CONTENT_HEADER" -H "Authorization: Bearer $TOKEN" \
+        -d '{"query":"How many SRM T3 EVs are in my fleet?"}'
+   ```
+
+   Or, go to http://localhost:8000/app/ and submit your prompt. For the same query as above, the answer should return:
    → '2' if fleet_id=1
    → '0' if fleet_id=2
    <br>
    <br>
 
-   ```bash
 
+   ```bash
    # Clean up (This remove volumes, too)
    make clean
    ```
 
-### 3. Testing:
+### 3. Test:
    ```bash
-   # Run tests against local environment
-   make test-local
-
-   # Run tests against production
    make test
    ```
 
-## 📝 API Examples
-
-1. Generate JWT Token:
-```bash
-curl -X POST http://localhost:8000/api/auth/generate_jwt_token \
-     -H "Content-Type: application/json" \
-     -d '{"sub": "superuser", "fleet_id": "fleet1", "exp_hours": 1}'
-```
-
-2. Execute Natural Language Query:
-```bash
-curl -X POST http://localhost:8000/api/chat/execute_user_query \
-     -H "Content-Type: application/json" \
-     -H "Authorization: Bearer YOUR_TOKEN" \
-     -d '{"query": "How many vehicles are currently driving with SOC below 30%?"}'
-```
-
-## 🔒 Security Features
-
-- Row-level security (RLS) enforced at database level
-- JWT-based authentication
-- Fleet-specific data isolation
-- SQL injection prevention through LLM query generation
 
 ## 🌐 Demo
 
-Access the live demo at: https://genai-sql-1.onrender.com/app
+Live demo (temporary): https://genai-sql-1.onrender.com/app
 
 Health check endpoint: https://genai-sql-1.onrender.com/api/ping
 

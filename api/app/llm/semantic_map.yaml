@@ -10,6 +10,9 @@ SOC:
     - charging_sessions.start_soc
     - charging_sessions.end_soc
     - processed_metrics.soc_band (enum)
+    - raw_telemetry.vehicle_id  
+    - vehicles.vehicle_id       
+    - vehicles.registration_no  
 "SOC comfort zone":
   description: "Healthy operating band for SOC"
   columns:
