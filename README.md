@@ -103,17 +103,16 @@ api/
    <br>
    <br>
 
-
-   ```bash
-   # Clean up (This remove volumes, too)
-   make clean
-   ```
-
 ### 3. Test:
    ```bash
    make test
    ```
 
+### 4. Clean up
+   ```bash
+   # This remove volumes, too
+   make clean
+   ```
 
 ## 🌐 Demo
 
