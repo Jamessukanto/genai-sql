@@ -28,21 +28,27 @@ A natural language interface for querying electric vehicle fleet telemetry data.
 ```
 api/
 ├── app/
-│   ├── llm/          # LLM agent and semantic mapping
-│   ├── services/     # Auth, SQL, and chat services
-│   └── main.py       # FastAPI application
-│   └── ssl/
-│       └── setup-certs.sh
-├── data/         
-├── frontend/         
-├── scripts/         
-│   └── setup_data/   # Database setup and data import
-├── tests/            # Tests and pytest config
-│   └── pytest.ini
-└── requirements.txt
+│   ├── llm/                  # LLM agent and semantic mapping
+│   ├── services/             # Backend services
+│   │   ├── auth_service/     # Authentication and JWT handling
+│   │   ├── chat_service/     # LLM chat interface and configs
+│   │   ├── sql_service/      # Database operations
+│   │   └── service_utils.py
+│   └── main.py               # FastAPI app
+├── data/                     # Sample data
+├── frontend/           
+├── scripts/                  
+│   ├── setup_data/           # Database init scripts
+│   │   ├── import_data.py    # CSV data import with RLS
+│   │   ├── setup_database.py # Schema and table creation
+│   │   ├── setup_user.py     # User permissions and roles
+│   │   └── table_queries.py  # Tables creation queries
+│   └── init-certs.sh         # Generate ssl certs
+├── tests/             
+├── Dockerfile         
+├── db.py                     # Database connection and config
+└── requirements.txt   
 ```
-
-
 
 ## 🚀 Quick Start
 
