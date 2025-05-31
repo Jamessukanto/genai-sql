@@ -115,7 +115,7 @@ api/
 
 ## 🌐 Demo
 
-Live demo (temporary): https://genai-sql-1.onrender.com/app
+Live demo: https://genai-sql-1.onrender.com/app (Note that the demo is **temporary**, and Mistral API calls are **not free**.)
 
 Health check endpoint: https://genai-sql-1.onrender.com/api/ping
 
