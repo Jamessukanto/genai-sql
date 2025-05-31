@@ -95,9 +95,10 @@ api/
         -d '{"query":"How many SRM T3 EVs are in my fleet?"}'
    ```
 
-   Or, go to http://localhost:8000/app/ and submit your prompt. For the same query as above, the answer should return:
-   → '2' if fleet_id=1
-   → '0' if fleet_id=2
+   Or, go to http://localhost:8000/app/ and submit your prompt. For the same query as above, the response should return:
+   - If fleet_id = "1" → answer is '2 EVs'
+   - If fleet_id = "2" → answer is 'No Evs'
+
    <br>
    <br>
 
