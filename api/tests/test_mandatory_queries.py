@@ -105,7 +105,6 @@ class TestMandatoryQueries:
             return result
 
     async def test_soc_specific_vehicle(self, auth_token):
-        """Test Query 1: What is the SOC of vehicle GBM6296G right now?"""
         result = await self._execute_query(
             "What is the SOC of vehicle GBM6296G right now?",
             auth_token,
@@ -113,7 +112,6 @@ class TestMandatoryQueries:
         )
 
     async def test_srm_t3_count(self, auth_token):
-        """Test Query 2: How many SRM T3 EVs are in my fleet?"""
         result = await self._execute_query(
             "How many SRM T3 EVs are in my fleet?",
             auth_token,
