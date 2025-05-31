@@ -79,7 +79,6 @@ api/
 
    #### Generate JWT token 
    ```bash
-   # Clean up (This remove volumes, too)
    export USER="superuser"
    export FLEET_ID="1"  # Available IDs are "1" and "2"
 
