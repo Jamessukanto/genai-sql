@@ -73,17 +73,16 @@ api/
 
    # Expected return: Only rows where fleet_id = '1' (3 rows)
    SELECT * FROM vehicles;
-
-   \q
    ```
 
    #### Generate JWT token 
    ```bash
    export USER="superuser"
    export FLEET_ID="1"  # Available IDs are "1" and "2"
-
-    TOKEN=$( \
-    curl -s -X POST "$API_URL/auth/generate_jwt_token" \
+   ```
+   ```bash
+   TOKEN=$( \
+      curl -s -X POST "$API_URL/auth/generate_jwt_token" \
         -H "$CONTENT_HEADER" \
         -d "{\"sub\": \"$USER\", \"fleet_id\": \"$FLEET_ID\", \"exp_hours\": 1}" \
     | sed -n 's/.*"token":"\([^"]*\)".*/\1/p' )
