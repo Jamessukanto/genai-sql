@@ -1,19 +1,19 @@
+
 version: '3.8'
 
 services:
   db:
     image: postgres:15
     environment:
-      # Only for local development.
-      POSTGRES_DB: fleetdb
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./ssl:/var/lib/postgresql/certs:ro
-    user: postgres
+      - ./backend/core/certs:/var/lib/postgresql/certs:ro
+    user: ${POSTGRES_USER}
     command: >
       postgres 
       -c ssl=on 
@@ -25,18 +25,29 @@ services:
       timeout: 5s
       retries: 5
 
-  api:
+  backend:
     build: 
-      context: ./api
+      context: ./backend  # ./api
       dockerfile: Dockerfile
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/fleetdb?sslmode=require
+      - DATABASE_URL=${DATABASE_URL}?sslmode=require
       - MISTRAL_API_KEY=${MISTRAL_API_KEY}
     ports:
       - "8000:8000"
     volumes:
-      - ./api:/app
-      - ./ssl:/var/lib/postgresql/certs:ro
+      - ./backend:/app
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "8501:8501"
+    # depends_on:
+    #   - api
+    volumes:
+      - ./frontend:/app
+    command: streamlit run streamlit.py --server.port=8501 --server.address=0.0.0.0
 
 volumes:
   postgres_data:

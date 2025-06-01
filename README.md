@@ -59,16 +59,20 @@ api/
    ```
 
 ### 2. Development:
-
    ```bash
    # Set env vars
-   export MISTRAL_API_KEY="your_mistral_api_key"
-   export API_URL="http://localhost:8000/api"
-   export CONTENT_HEADER="Content-Type: application/json"
+   source .env
 
-   # Start FastAPI and PostgreSQL services (This seeds sample data, too!)
+   # Get your api key at xxx
+   export MISTRAL_API_KEY="your_mistral_api_key"
+   ```
+   <br>
+
+   Start FastAPI and PostgreSQL services (This seeds sample data, too!)   
+   ```bash
    make dev
    ```
+   <br>
 
    Verify Row-Level Security (RLS) manually
    ```bash
