@@ -21,7 +21,7 @@ dev: setup-ssl-certs
 	docker-compose up --build -d
 	@echo "Waiting for services to be ready..."
 	@echo "Frontend should now be running on http://localhost:8501"
-	@sleep 1
+	@sleep 4
 	$(MAKE) setup-db
 	$(MAKE) seed-db
 
