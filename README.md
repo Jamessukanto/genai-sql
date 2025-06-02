@@ -60,15 +60,12 @@ api/
 
 ### 2. Development:
    ```bash
-   # Set env vars
-   source .env
-
-   # Get your api key at xxx
+   # Get your Mistral API key 
    export MISTRAL_API_KEY="your_mistral_api_key"
    ```
    <br>
 
-   Start FastAPI and PostgreSQL services (This seeds sample data, too!)   
+   Start FastAPI backend, frontend, and PostgreSQL services (This seeds sample data, too!)   
    ```bash
    make dev
    ```
@@ -87,25 +84,31 @@ api/
 
    #### Generate JWT token 
    ```bash
-   export USER="superuser"
+   export ROLE="end_user"
    export FLEET_ID="1"  # Available IDs are "1" and "2"
    ```
    ```bash
    TOKEN=$( \
       curl -s -X POST "$API_URL/auth/generate_jwt_token" \
         -H "$CONTENT_HEADER" \
-        -d "{\"sub\": \"$USER\", \"fleet_id\": \"$FLEET_ID\", \"exp_hours\": 1}" \
+        -d "{\"sub\": \"$ROLE\", \"fleet_id\": \"$FLEET_ID\", \"exp_hours\": 1}" \
     | sed -n 's/.*"token":"\([^"]*\)".*/\1/p' )
    ```
 
    #### Execute user query
    ```bash
-    curl -X POST "$API_URL/chat/execute_user_query" \
-        -H "$CONTENT_HEADER" -H "Authorization: Bearer $TOKEN" \
-        -d '{"query":"How many SRM T3 EVs are in my fleet?"}'
+   curl -X POST "$API_URL/chat/execute_user_query" \
+      -H "$CONTENT_HEADER" -H "Authorization: Bearer $TOKEN" \
+      -d '{
+            "query": "How many SRM T3 EVs are in my fleet?",
+            "messages": [{
+               "role": "user",
+               "content": "How many SRM T3 EVs are in my fleet?"
+            }]
+         }'
    ```
 
-   Or, go to http://localhost:8000/app/ and submit your prompt. For the same query as above, the response should return:
+   Or, go to http://localhost:8501/ and submit your prompt. For the same query as above, the response should return:
    - If fleet_id = "1" → answer is '2 EVs'
    - If fleet_id = "2" → answer is 'No Evs'
 
