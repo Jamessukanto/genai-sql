@@ -7,13 +7,13 @@ setup-ssl-certs:
 
 setup-db:
 	@echo "Setting up database schema..."
-	docker-compose run --rm backend \
+	env $(cat .env | xargs) docker-compose run --rm backend \
 		python -m core.setup_data.setup_database \
 		--drop-existing
 
 seed-db:
 	@echo "Loading sample data..."
-	docker-compose run --rm backend \
+	env $(cat .env | xargs) docker-compose run --rm backend \
 		python -m core.setup_data.import_data \
 		--csv-dir ./data
 
