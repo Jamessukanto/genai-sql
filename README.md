@@ -87,6 +87,8 @@ A natural language interface for querying electric vehicle fleet telemetry data.
    ```bash
    export ROLE="end_user"
    export FLEET_ID="1"  # Available IDs are "1" and "2"
+   export API_URL="http://localhost:8000/api"
+   export CONTENT_HEADER="Content-Type: application/json"
    ```
    ```bash
    TOKEN=$( \
