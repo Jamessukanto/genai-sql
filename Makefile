@@ -14,8 +14,9 @@ setup-db:
 	# 	python -m core.setup_data.setup_database \
 	# 	--drop-existing
 
-	docker compose --project-name genai run --rm --network genai_default backend \
+	docker compose exec backend \
 		python -m core.setup_data.setup_database --drop-existing
+
 
 seed-db:
 	@echo "Loading sample data..."
@@ -23,11 +24,11 @@ seed-db:
 	# 	python -m core.setup_data.import_data \
 	# 	--csv-dir ./data
 
-	docker compose --project-name genai run --rm --network genai_default backend \
+	docker compose exec backend \
 		python -m core.setup_data.import_data --csv-dir ./data
 
 dev: setup-ssl-certs
-	docker compose --project-name genai up --build -d
+	docker compose up --build -d
 	@echo "Waiting for services to be ready..."
 	@echo "Frontend should now be running on http://localhost:8501"
 	@sleep 4
@@ -37,9 +38,9 @@ dev: setup-ssl-certs
 test:
 	# docker-compose run --rm backend pytest tests/test_mandatory_queries.py -s
 
-	docker compose --project-name genai run --rm --network genai_default backend \
+	docker compose exec backend \
 		pytest tests/test_mandatory_queries.py -s
 
 clean:
-	docker compose --project-name genai down -v
+	docker compose down -v
 
