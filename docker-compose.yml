@@ -35,9 +35,10 @@ services:
       # POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       # DATABASE_URL: ${DATABASE_URL}?sslmode:require
       DATABASE_URL: ${DATABASE_URL}
-
-      
       MISTRAL_API_KEY: ${MISTRAL_API_KEY}
+    depends_on:
+      db:
+        condition: service_healthy
     ports:
       - "8000:8000"
     volumes:
