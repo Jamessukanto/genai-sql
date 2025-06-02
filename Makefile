@@ -1,3 +1,6 @@
+PROJECT_NAME := genai
+NETWORK_NAME := $(PROJECT_NAME)_default
+
 .PHONY: dev clean test setup-ssl-certs setup-db seed-db
 
 setup-ssl-certs:
@@ -7,18 +10,24 @@ setup-ssl-certs:
 
 setup-db:
 	@echo "Setting up database schema..."
-	env $(cat .env | xargs) docker-compose run --rm backend \
-		python -m core.setup_data.setup_database \
-		--drop-existing
+	# docker-compose run --rm backend \
+	# 	python -m core.setup_data.setup_database \
+	# 	--drop-existing
+
+	docker-compose --project-name $(PROJECT_NAME) run --rm --network $(NETWORK_NAME) backend \
+		python -m core.setup_data.setup_database --drop-existing
 
 seed-db:
 	@echo "Loading sample data..."
-	env $(cat .env | xargs) docker-compose run --rm backend \
-		python -m core.setup_data.import_data \
-		--csv-dir ./data
+	# docker-compose run --rm backend \
+	# 	python -m core.setup_data.import_data \
+	# 	--csv-dir ./data
+
+	docker-compose --project-name $(PROJECT_NAME) run --rm --network $(NETWORK_NAME) backend \
+		python -m core.setup_data.import_data --csv-dir ./data
 
 dev: setup-ssl-certs
-	docker-compose up --build -d
+	docker-compose --project-name $(PROJECT_NAME) up --build -d
 	@echo "Waiting for services to be ready..."
 	@echo "Frontend should now be running on http://localhost:8501"
 	@sleep 4
@@ -26,8 +35,11 @@ dev: setup-ssl-certs
 	$(MAKE) seed-db
 
 test:
-	docker-compose run --rm backend pytest tests/test_mandatory_queries.py -s
+	# docker-compose run --rm backend pytest tests/test_mandatory_queries.py -s
+
+	docker-compose --project-name $(PROJECT_NAME) run --rm --network $(NETWORK_NAME) backend \
+		pytest tests/test_mandatory_queries.py -s
 
 clean:
-	docker-compose down -v
+	docker-compose --project-name $(PROJECT_NAME) down -v
 
