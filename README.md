@@ -113,8 +113,7 @@ A natural language interface for querying electric vehicle fleet telemetry data.
    - If fleet_id = "1" → answer is '2 EVs'
    - If fleet_id = "2" → answer is 'No Evs'
 
-   <br>
-   <br>
+<br>
 
 ### 3. Test:
    ```bash
@@ -126,6 +125,8 @@ A natural language interface for querying electric vehicle fleet telemetry data.
    # This remove volumes, too
    make clean
    ```
+
+<br>
 
 ## 🌐 Demo
 
