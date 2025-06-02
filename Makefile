@@ -17,6 +17,7 @@ setup-db:
 	docker-compose --project-name $(PROJECT_NAME) run --rm --network $(NETWORK_NAME) backend \
 		python -m core.setup_data.setup_database --drop-existing
 
+			
 seed-db:
 	@echo "Loading sample data..."
 	# docker-compose run --rm backend \
