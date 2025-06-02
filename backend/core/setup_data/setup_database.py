@@ -69,13 +69,6 @@ async def main(
             db = create_database_connection()
             await db.connect()
 
-            print("HA")
-            print()
-            print(db_name)
-            print(db)
-            print()
-            print()
-
         await verify_db_connection(db)
         await setup_database_schema(db, drop_existing)
         await setup_users_and_permissions(db, db_name or "fleetdb")

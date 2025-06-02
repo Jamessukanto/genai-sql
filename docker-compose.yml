@@ -27,13 +27,9 @@ services:
 
   backend:
     build: 
-      context: ./backend  # ./api
+      context: ./backend
       dockerfile: Dockerfile
     environment:
-      # POSTGRES_DB: ${POSTGRES_DB}
-      # POSTGRES_USER: ${POSTGRES_USER}
-      # POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      # DATABASE_URL: ${DATABASE_URL}?sslmode:require
       DATABASE_URL: ${DATABASE_URL}
       MISTRAL_API_KEY: ${MISTRAL_API_KEY}
     depends_on:
@@ -50,8 +46,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8501:8501"
-    # depends_on:
-    #   - api
+    depends_on:
+      - backend
     volumes:
       - ./frontend:/app
     command: streamlit run main.py --server.port=8501 --server.address=0.0.0.0
