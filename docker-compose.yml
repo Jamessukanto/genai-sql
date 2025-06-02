@@ -47,7 +47,7 @@ services:
     #   - api
     volumes:
       - ./frontend:/app
-    command: streamlit run streamlit.py --server.port=8501 --server.address=0.0.0.0
+    command: streamlit run main.py --server.port=8501 --server.address=0.0.0.0
 
 volumes:
   postgres_data:
