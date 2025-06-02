@@ -5,6 +5,8 @@ NETWORK_NAME := $(PROJECT_NAME)_default
 
 setup-ssl-certs:
 	@echo "Setting up ssl certs..."
+	chmod 600 ./backend/core/certs/server.key
+	
 	chmod +x ./backend/core/setup-ssl-certs.sh
 	./backend/core/setup-ssl-certs.sh 
 
