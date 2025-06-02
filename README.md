@@ -26,28 +26,29 @@ A natural language interface for querying electric vehicle fleet telemetry data.
 ## 📁 Project Structure
 
 ```
-api/
-├── app/
-│   ├── llm/                  # LLM agent and semantic mapping
-│   ├── services/             # Backend services
-│   │   ├── auth_service/     # Authentication and JWT handling
-│   │   ├── chat_service/     # LLM chat interface and configs
-│   │   ├── sql_service/      # Database operations
-│   │   └── service_utils.py
-│   └── main.py               # FastAPI app
-├── data/                     # Sample data
-├── frontend/           
-├── scripts/                  
-│   ├── setup_data/           # Database init scripts
-│   │   ├── import_data.py    # CSV data import with RLS
-│   │   ├── setup_database.py # Schema and table creation
-│   │   ├── setup_user.py     # User permissions and roles
-│   │   └── table_queries.py  # Tables creation queries
-│   └── init-certs.sh         # Generate ssl certs
-├── tests/             
-├── Dockerfile         
-├── db.py                     # Database connection and config
-└── requirements.txt   
+.
+├── Makefile
+├── docker-compose.yml
+├── backend
+│   ├── Dockerfile
+│   ├── core
+│   │   ├── db_con.py           # Set up database connection
+│   │   ├── llm_agent           # LLM agent and semantic mapping
+│   │   ├── setup-ssl-certs.sh  # ** Set up SSL certs 
+│   │   └── setup_data          # Set up tables, roles, RLS and seed data
+│   ├── data                    # Sample data
+│   ├── main.py                 # FastAPI app
+│   ├── requirements.txt
+│   ├── routes                  # Endpoints
+│   │   ├── auth                # Authentication, JWT handling
+│   │   ├── chat                # LLM chat interface and configs
+│   │   ├── sql                 # Database ops
+│   │   └── utils.py
+│   └── tests
+└── frontend
+    ├── Dockerfile
+    ├── main.py
+    └── requirements.txt
 ```
 
 ## 🚀 Quick Start
