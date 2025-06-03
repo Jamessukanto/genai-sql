@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
-# from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+# from fastapi.staticfiles import StaticFiles
 
 from core.db_con import database
 from routes.sql.sql import sql_router
@@ -43,17 +43,17 @@ async def on_shutdown():
             status_code=500, detail=f"Failed to disconnect from database: {e}"
         )
 
-# @app.get("/")
-# async def root():
-#     """Redirect root path to /app"""
-#     return RedirectResponse(url="/app")
-
 @app.get("/api/ping")
 async def ping():
     return {"status": "ok"}
 
 
-# # Serve frontend under /app path
+# @app.get("/")
+# async def root():
+#     """Redirect root path to /app"""
+#     return RedirectResponse(url="/app")
+
+# # Serve minimal frontend under /app path
 # fe_path = os.path.abspath(
 #     os.path.join(os.path.dirname(__file__), "../frontend")
 # )

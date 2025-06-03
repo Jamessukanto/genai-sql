@@ -29,7 +29,7 @@ async def execute_user_query(req: ChatRequest, user_info: dict = Depends(get_use
     Processes a user's natural language query using an LLM agent configured per user and fleet.
     
     NOTE: This LLM agent setup runs per-request for demo flexibility (dynamic fleet_id via UI).
-          In production, to be moved to user session to avoid re-initialization.
+          In production, 'init_chat_model' is to be moved to user session to avoid re-initialization.
     """
     print("\n\n" + ("="*80) + "\nExecuting conversational chat query.\n")
     user = user_info["user"]
