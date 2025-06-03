@@ -132,9 +132,8 @@ A natural language interface for querying electric vehicle fleet telemetry data.
 
 ## 🌐 Demo
 
-Live demo: https://genai-sql-1.onrender.com/app <br> (Note that the demo is **temporary**, and Mistral API calls are **not free**.)
+Live demo: https://genai-sql-2-frontend.onrender.com <br> (Note that the demo is **temporary**, and Mistral API calls are **not free**.)
 
-Health check endpoint: https://genai-sql-1.onrender.com/api/ping
 
 ## 📜 License
 

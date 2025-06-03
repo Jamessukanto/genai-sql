@@ -15,6 +15,7 @@ st.title("SQL Chat Assistant Demo")
 with st.sidebar:
     st.header("Configuration")
     fleet_id = st.selectbox("Select Fleet ID", options=["1", "2"])
+    mistral_api_key = st.text_input("Mistral API Key", type="password")
 
 # --- Chat history ---
 if "messages" not in st.session_state:
@@ -38,6 +39,7 @@ query = st.chat_input("Type your message here...")
 if query:
     append_message("human", query)
 
+
     try:
         with st.spinner("Thinking..."):
             token = make_api_call("api/auth/generate_jwt_token", {
@@ -48,7 +50,8 @@ if query:
 
             chat_response = make_api_call("api/chat/execute_user_query", {
                 "messages": st.session_state.messages,
-                "query": query
+                "query": query,
+                # "mistral_api_key": mistral_api_key   # pass it in request body
             }, token)
 
             reply = chat_response["response"]
