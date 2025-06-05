@@ -1,8 +1,9 @@
 import os
 import csv
+import hmac
 import argparse
 import asyncio
-from typing import Set, List, Dict, Any
+from typing import Set, List, Dict, Any, Optional
 from databases import Database
 
 from core.setup_data.table_queries import PARTITIONED_TABLES, CREATE_TABLE_QUERIES
@@ -36,12 +37,37 @@ async def create_vehicle_partition(db: Database, vehicle_id: str, table: str) ->
 
 
 def get_vehicle_ids_from_csv(csv_path: str) -> Set[str]:
-    """Extract unique vehicle IDs from a CSV file."""
+    """Extract unique vehicle IDs from a CSV file.
+    
+    This function uses constant-time comparison when checking for the required column
+    to prevent timing attacks.
+    
+    Args:
+        csv_path: Path to the CSV file containing vehicle data
+        
+    Returns:
+        Set of unique vehicle IDs from the CSV
+        
+    Raises:
+        ValueError: If the vehicle_id column is missing
+        RuntimeError: If there are issues reading the file
+    """
     try:
         with open(csv_path, "r") as csv_file:
             reader = csv.DictReader(csv_file)
-            if "vehicle_id" not in reader.fieldnames:
+            if not reader.fieldnames:
+                raise ValueError(f"CSV file {csv_path} has no headers")
+                
+            # Use constant-time comparison to check for vehicle_id column
+            has_vehicle_id = False
+            for field in reader.fieldnames:
+                if hmac.compare_digest(field, "vehicle_id"):
+                    has_vehicle_id = True
+                    break
+                    
+            if not has_vehicle_id:
                 raise ValueError(f"CSV file {csv_path} missing vehicle_id column")
+                
             return set(row["vehicle_id"] for row in reader)
     except Exception as e:
         raise RuntimeError(f"Failed to read vehicle IDs from {csv_path}: {e}")
