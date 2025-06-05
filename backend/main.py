@@ -27,6 +27,17 @@ app.include_router(auth_router, prefix="/api")
 
 @app.on_event("startup")
 async def on_startup():
+    """Asynchronous function that establishes a connection to the database on startup.
+    
+    Args:
+        None
+    
+    Returns:
+        None
+    
+    Raises:
+        HTTPException: If the database connection fails, with a 500 status code and an error message.
+    """
     try:
         await database.connect()
     except Exception as e:
@@ -36,6 +47,17 @@ async def on_startup():
 
 @app.on_event("shutdown")
 async def on_shutdown():
+    """Asynchronously handles the shutdown process by disconnecting from the database.
+    
+    Args:
+        None
+    
+    Returns:
+        None
+    
+    Raises:
+        HTTPException: If there is an error disconnecting from the database.
+    """
     try:
         await database.disconnect()
     except Exception as e:
