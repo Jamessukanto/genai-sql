@@ -23,9 +23,31 @@ if "messages" not in st.session_state:
 
 # --- Helpers ---
 def append_message(role, content):
+    """Append a message to the session state messages.
+    
+    Args:
+        role (str): The role of the message sender (e.g., 'user', 'assistant').
+        content (str): The content of the message to be appended.
+    
+    Returns:
+        None: This method doesn't return anything, it modifies the session state in-place.
+    """
     st.session_state.messages.append({"type": role, "content": content})
 
 def make_api_call(endpoint, body=None, token=None):
+    """Makes an API call to a specified endpoint.
+    
+    Args:
+        endpoint (str): The API endpoint to call.
+        body (dict, optional): The JSON body to send with the request. Defaults to None.
+        token (str, optional): The authentication token. If provided, it will be used in the Authorization header. Defaults to None.
+    
+    Returns:
+        dict: The JSON response from the API.
+    
+    Raises:
+        Exception: If the API request is not successful (non-2xx status code).
+    """
     headers = {"Content-Type": "application/json"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
