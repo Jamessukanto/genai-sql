@@ -102,6 +102,19 @@ class TestMandatoryQueries:
             return result
 
     async def test_soc_specific_vehicle(self, auth_token):
+        """Executes a query to retrieve the State of Charge (SOC) for a specific vehicle.
+        
+        Args:
+            auth_token (str): Authentication token for API access.
+        
+        Returns:
+            tuple: A tuple containing the SOC value and its unit (percentage).
+        
+        Raises:
+            AuthenticationError: If the provided auth_token is invalid.
+            VehicleNotFoundError: If the specified vehicle is not found.
+            APIError: If there's an error in the API communication.
+        """
         result = await self._execute_query(
             "What is the SOC of vehicle GBM6296G right now?",
             auth_token,
@@ -109,6 +122,17 @@ class TestMandatoryQueries:
         )
 
     async def test_srm_t3_count(self, auth_token):
+        """Asynchronously executes a query to count the number of SRM T3 EVs in the fleet.
+        
+        Args:
+            auth_token (str): Authentication token for authorization.
+        
+        Returns:
+            str: The count of SRM T3 EVs in the fleet, represented as a string.
+        
+        Raises:
+            ValueError: If the query execution fails or returns an unexpected result.
+        """
         result = await self._execute_query(
             "How many SRM T3 EVs are in my fleet?",
             auth_token,
@@ -117,6 +141,17 @@ class TestMandatoryQueries:
         )
 
     async def test_battery_temp_threshold(self, auth_token):
+        """Checks if any SRM T3 exceeded 33°C battery temperature in the last 24 hours.
+        
+        Args:
+            auth_token (str): Authentication token for executing the query.
+        
+        Returns:
+            str: 'yes' if any SRM T3 exceeded 33°C battery temperature in the last 24 hours, 'no' otherwise.
+        
+        Raises:
+            Exception: If there's an error executing the query or processing the result.
+        """
         result = await self._execute_query(
             "Did any SRM T3 exceed 33 °C battery temperature in the last 24 h?",
             auth_token,
@@ -124,6 +159,19 @@ class TestMandatoryQueries:
         )
 
     async def test_fleet_soc_comfort_zone(self, auth_token):
+        """Executes a query to determine the fleet-wide average State of Charge (SOC) comfort zone.
+        
+        Args:
+            auth_token (str): Authentication token required for executing the query.
+        
+        Returns:
+            str: A string representation of the fleet-wide average SOC comfort zone,
+                 typically in the format "X% to Y%".
+        
+        Raises:
+            AuthenticationError: If the provided auth_token is invalid.
+            QueryExecutionError: If there's an error executing the query.
+        """
         result = await self._execute_query(
             "What is the fleet-wide average SOC comfort zone?",
             auth_token,
@@ -131,6 +179,18 @@ class TestMandatoryQueries:
         )
 
     async def test_high_soc_vehicles(self, auth_token):
+        """Executes a query to identify vehicles with high state of charge (SOC) levels.
+        
+        Args:
+            auth_token (str): Authentication token for query execution.
+        
+        Returns:
+            dict: A dictionary containing the query results with keys 'vehicle', 'gbm', and 'registration'.
+        
+        Raises:
+            AuthenticationError: If the provided auth_token is invalid.
+            QueryExecutionError: If there's an error during query execution.
+        """
         result = await self._execute_query(
             "Which vehicles spent > 20 % time in the 90-100 % SOC band this week?",
             auth_token,
@@ -138,6 +198,18 @@ class TestMandatoryQueries:
         )
 
     async def test_low_soc_driving(self, auth_token):
+        """Executes a query to check the number of vehicles currently driving with a State of Charge (SOC) below 30%.
+        
+        Args:
+            auth_token (str): Authentication token for authorizing the query.
+        
+        Returns:
+            str: A string representation of the number of vehicles currently driving with SOC < 30%.
+                Returns 'no' if no vehicles match the criteria, or a string number from '0' to '99999'.
+        
+        Raises:
+            Exception: If there's an error executing the query or processing the result.
+        """
         result = await self._execute_query(
             "How many vehicles are currently driving with SOC < 30 %?",
             auth_token,
@@ -146,6 +218,22 @@ class TestMandatoryQueries:
         )
 
     async def test_fleet_usage_stats(self, auth_token):
+        """Retrieves fleet usage statistics for the past 7 days.
+        
+        Args:
+            auth_token (str): Authentication token for API access.
+        
+        Returns:
+            dict: A dictionary containing fleet usage statistics including:
+                - Total kilometers driven
+                - Total driving hours
+                - Most-used vehicle(s)
+                - Least-used vehicle(s)
+        
+        Raises:
+            AuthenticationError: If the provided auth_token is invalid.
+            APIError: If there's an issue with the API request or response.
+        """
         result = await self._execute_query(
             """What is the total km and driving hours by my fleet over the past 7 days, 
             and which are the most-used & least-used vehicles?""",

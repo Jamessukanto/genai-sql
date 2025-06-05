@@ -23,7 +23,17 @@ if "messages" not in st.session_state:
 
 # --- Helpers ---
 def append_message(role, content):
+    """Append a message to the session state messages.
+    
+    Args:
+        role (str): The role of the message sender (e.g., 'user', 'assistant').
+        content (str): The content of the message to be appended.
+    
+    Returns:
+        None: This method doesn't return anything, it modifies the session state in-place.
+    """
     st.session_state.messages.append({"type": role, "content": content})
+
 
 def make_api_call(endpoint, body=None, token=None, timeout=10):
     headers = {"Content-Type": "application/json"}
