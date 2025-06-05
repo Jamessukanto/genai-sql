@@ -34,27 +34,25 @@ def append_message(role, content):
     """
     st.session_state.messages.append({"type": role, "content": content})
 
-def make_api_call(endpoint, body=None, token=None):
-    """Makes an API call to a specified endpoint.
-    
-    Args:
-        endpoint (str): The API endpoint to call.
-        body (dict, optional): The JSON body to send with the request. Defaults to None.
-        token (str, optional): The authentication token. If provided, it will be used in the Authorization header. Defaults to None.
-    
-    Returns:
-        dict: The JSON response from the API.
-    
-    Raises:
-        Exception: If the API request is not successful (non-2xx status code).
-    """
+
+def make_api_call(endpoint, body=None, token=None, timeout=10):
     headers = {"Content-Type": "application/json"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
-    res = requests.post(f"{BASE_URL}/{endpoint}", json=body, headers=headers)
-    if not res.ok:
-        raise Exception(res.text)
-    return res.json()
+    try:
+        res = requests.post(
+            f"{BASE_URL}/{endpoint}",
+            json=body,
+            headers=headers,
+            timeout=timeout
+        )
+        if not res.ok:
+            raise Exception(res.text)
+        return res.json()
+    except requests.exceptions.Timeout:
+        raise Exception(f"Request to {endpoint} timed out after {timeout} seconds")
+    except requests.exceptions.RequestException as e:
+        raise Exception(f"Request failed: {str(e)}")
 
 # --- Chat Input ---
 query = st.chat_input("Type your message here...")
