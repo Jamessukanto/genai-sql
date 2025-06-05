@@ -1,4 +1,12 @@
 def get_schema_prompt(mappings=""):
+    """Get a schema prompt for SQL schema discovery.
+    
+    Args:
+        mappings (str, optional): Semantic mappings to guide table selection. Defaults to an empty string.
+    
+    Returns:
+        str: A formatted string containing instructions for SQL schema discovery, including the provided semantic mappings and important rules for table selection.
+    """
     return f"""
     You are a SQL schema expert. Given a user question, determine which tables need to be examined.
     Use these semantic mappings to guide your table selection:
@@ -12,6 +20,18 @@ def get_schema_prompt(mappings=""):
     """
 
 def generate_query_prompt(dialect, row_limit, time_limit_sec, mappings=""):
+    """Generate a query prompt for SQL database interaction.
+    
+    Args:
+        dialect (str): The SQL dialect to be used in the query.
+        row_limit (int): The maximum number of rows to return in the query result.
+        time_limit_sec (int): The maximum execution time for the query in seconds.
+        mappings (str, optional): User-defined term to column name mappings.
+    
+    Returns:
+        str: A formatted string containing instructions for SQL query generation,
+             including the specified dialect, row and time limits, and any provided mappings.
+    """
     return f"""
     You are an agent designed to interact with a SQL database.
     Given an input question, create a syntactically correct {dialect} query to run,
@@ -32,6 +52,16 @@ def generate_query_prompt(dialect, row_limit, time_limit_sec, mappings=""):
     """
 
 def check_query_prompt(dialect):
+    """Generate a SQL query check prompt for a specified SQL dialect.
+    
+    Args:
+        dialect (str): The SQL dialect to be used for the query check.
+    
+    Returns:
+        str: A formatted string containing a prompt for checking SQL queries in the specified dialect.
+            The prompt includes instructions for common SQL mistakes to look out for and
+            guidance on how to respond to the findings.
+    """
     return f"""
     You are a SQL expert with a strong attention to detail.
     Double check the {dialect} query for common mistakes, including:
