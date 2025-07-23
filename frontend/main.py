@@ -11,15 +11,15 @@ st.set_page_config(page_title="💬 Chat Assistant", layout="wide", initial_side
 # --- Title ---
 st.title("SQL Chat Assistant Demo")
 
-# --- Sidebar ---
-with st.sidebar:
-    st.header("Configuration")
-    fleet_id = st.selectbox("Select Fleet ID", options=["1", "2"])
-    mistral_api_key = st.text_input("Mistral API Key", type="password")
-
 # --- Chat history ---
 if "messages" not in st.session_state:
     st.session_state.messages = []
+
+# --- Token management ---
+if "current_fleet_id" not in st.session_state:
+    st.session_state.current_fleet_id = None
+if "current_token" not in st.session_state:
+    st.session_state.current_token = None
 
 # --- Helpers ---
 def append_message(role, content):
@@ -35,7 +35,7 @@ def append_message(role, content):
     st.session_state.messages.append({"type": role, "content": content})
 
 
-def make_api_call(endpoint, body=None, token=None, timeout=10):
+def make_api_call(endpoint, body=None, token=None, timeout=60):
     headers = {"Content-Type": "application/json"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
@@ -54,28 +54,66 @@ def make_api_call(endpoint, body=None, token=None, timeout=10):
     except requests.exceptions.RequestException as e:
         raise Exception(f"Request failed: {str(e)}")
 
+
+def generate_token(fleet_id):
+    """Generate a new token for the given fleet_id."""
+    token_response = make_api_call("api/auth/generate_jwt_token", {
+        "sub": USER,
+        "fleet_id": fleet_id,
+        "exp_hours": 1
+    })
+    
+    # Update session state
+    st.session_state.current_token = token_response["token"]
+    st.session_state.current_fleet_id = fleet_id
+    
+    return st.session_state.current_token
+
+
+def get_current_token():
+    """Get the current cached token."""
+    if st.session_state.current_token is None:
+        st.error("❌ No token available. Please select a fleet first.")
+        raise Exception("No token available. Please select a fleet first.")
+    return st.session_state.current_token
+
+
+# --- Sidebar with eager token generation ---
+with st.sidebar:
+    st.header("Configuration")
+    fleet_id = st.selectbox("Select Fleet ID", options=["1", "2"])
+    
+    # Generate token immediately when fleet_id changes OR if no token exists
+    if (fleet_id != st.session_state.current_fleet_id or 
+        st.session_state.current_token is None):
+        try:
+            generate_token(fleet_id)
+            st.success(f"✅ Switched to Fleet {fleet_id}")
+        except Exception as e:
+            st.error(f"❌ Failed to switch to Fleet {fleet_id}: {str(e)}")
+
 # --- Chat Input ---
 query = st.chat_input("Type your message here...")
 if query:
     append_message("human", query)
 
-
     try:
         with st.spinner("Thinking..."):
-            token = make_api_call("api/auth/generate_jwt_token", {
-                "sub": USER,
-                "fleet_id": fleet_id,
-                "exp_hours": 1
-            })["token"]
+            token = st.session_state.current_token
+            
+            # Debug: Check if token exists
+            if not token:
+                st.error("❌ No token available. Please select a fleet first.")
+            else:
+                print(f"Using token: {token[:20]}...")
 
-            chat_response = make_api_call("api/chat/execute_user_query", {
-                "messages": st.session_state.messages,
-                "query": query,
-                # "mistral_api_key": mistral_api_key   # pass it in request body
-            }, token)
+                chat_response = make_api_call("api/chat/execute_user_query", {
+                    "messages": st.session_state.messages,
+                    "query": query
+                }, token)
 
-            reply = chat_response["response"]
-            append_message("ai", reply)
+                reply = chat_response["response"]
+                append_message("ai", reply)
 
     except Exception as e:
         st.error(str(e))

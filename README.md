@@ -74,7 +74,7 @@ A natural language interface for querying electric vehicle fleet telemetry data.
 
    Verify Row-Level Security (RLS) manually
    ```bash
-   docker-compose exec db psql -U end_user -d fleetdb; 
+   docker compose exec db psql -U end_user -d fleetdb; 
 
    # Simulate RLS by setting the fleet ID context
    SET app.fleet_id = '1';
