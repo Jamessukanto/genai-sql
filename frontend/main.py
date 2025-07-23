@@ -117,10 +117,10 @@ if query:
 
     except Exception as e:
         st.error(str(e))
-
 # --- Render Chat ---
 for message in st.session_state.messages:
     if message["type"] == "system":
         continue
     with st.chat_message("user" if message["type"] == "human" else "assistant"):
         st.markdown(message["content"])
+

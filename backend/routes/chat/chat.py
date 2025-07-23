@@ -26,9 +26,6 @@ async def get_agent_stats():
 async def execute_user_query(req: ChatRequest, user_info: dict = Depends(get_user_info)):
     """
     Processes a user's natural language query using an LLM agent configured per user and fleet.
-    
-    NOTE: Agent is cached per fleet/user combination for performance, but fresh fleet context
-          is applied to each request to ensure proper RLS isolation.
     """
     print("\n\n" + ("="*80) + "\nExecuting conversational chat query.\n")
     user = user_info["user"]

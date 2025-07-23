@@ -60,6 +60,9 @@ A natural language interface for querying electric vehicle fleet telemetry data.
    ```
 
 ### 2. Development:
+
+   Requirements: docker, docker compose (not docker-compose)
+
    ```bash
    # Get your Mistral API key 
    export MISTRAL_API_KEY="your_mistral_api_key"
@@ -72,7 +75,10 @@ A natural language interface for querying electric vehicle fleet telemetry data.
    ```
    <br>
 
-   Verify Row-Level Security (RLS) manually
+
+   <details>
+   <summary><strong>Manually verify Row-Level Security (RLS)</strong></summary>
+   
    ```bash
    docker compose exec db psql -U end_user -d fleetdb; 
 
@@ -82,7 +88,11 @@ A natural language interface for querying electric vehicle fleet telemetry data.
    # Expected return: Only rows where fleet_id = '1' (3 rows)
    SELECT * FROM vehicles;
    ```
+   </details>
 
+   <details>
+   <summary><strong>Manually execute query</strong></summary>
+   
    #### Generate JWT token 
    ```bash
    export ROLE="end_user"
@@ -110,6 +120,7 @@ A natural language interface for querying electric vehicle fleet telemetry data.
             }]
          }'
    ```
+   </details>
 
    Or, go to http://localhost:8501/ and submit your prompt. For the same query as above, the response should return:
    - If fleet_id = "1" → answer is '2 EVs'
