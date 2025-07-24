@@ -22,13 +22,15 @@ async def create_superuser(db: Database) -> None:
 
 
 async def create_end_user(db: Database) -> None:
-    """Create end_user role if it doesn't exist."""
+    """Create end_user role if it doesn't exist and ensure it has no superuser or bypassrls."""
     if not await check_role_exists(db, "end_user"):
         await db.execute("""
             CREATE ROLE end_user 
             WITH LOGIN 
             PASSWORD 'password';
         """)
+    # Always ensure end_user is not superuser and cannot bypass RLS
+    await db.execute("ALTER ROLE end_user NOSUPERUSER NOBYPASSRLS;")
 
 
 async def grant_permissions(db: Database, db_name: str) -> None:

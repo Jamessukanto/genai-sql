@@ -20,10 +20,9 @@ async def get_or_create_agent_for_fleet(fleet_id: str, user: str, model_name: st
     Get cached agent for fleet or create new one, with fresh fleet context applied.
     """
     cache_key = f"fleet_{fleet_id}:{user}:{model_name}"
-    print(f"[AGENT MANAGER] Agent cache key: {cache_key}")
     
     if cache_key not in _fleet_agent_cache:
-        print(f"[AGENT MANAGER] Creating new agent: {cache_key}")
+        print(f"Creating new agent: {cache_key}")
         
         # Create fresh model and database
         from core.llm_agent.utils import MODELS
@@ -51,7 +50,7 @@ async def get_or_create_agent_for_fleet(fleet_id: str, user: str, model_name: st
         agent = await build_agent(db, llm)
         _fleet_agent_cache[cache_key] = agent
     else:
-        print(f"[AGENT MANAGER] Using cached agent: {cache_key}")
+        print(f"Using cached agent: {cache_key}")
     
     return _fleet_agent_cache[cache_key]
 
