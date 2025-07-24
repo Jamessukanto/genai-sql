@@ -155,4 +155,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 
 
+
+What is the SOC of vehicle GBM6296G right now?
 How many SRM T3 EVs are in my fleet?

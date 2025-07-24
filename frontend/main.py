@@ -28,7 +28,6 @@ def append_message(role, content):
     """Append a message to the session state messages."""
     st.session_state.messages.append({"type": role, "content": content})
 
-
 def make_api_call(endpoint, body=None, token=None, timeout=60):
     headers = {"Content-Type": "application/json"}
     if token:
@@ -48,7 +47,6 @@ def make_api_call(endpoint, body=None, token=None, timeout=60):
         raise Exception(f"Request to {endpoint} timed out after {timeout} seconds")
     except requests.exceptions.RequestException as e:
         raise Exception(f"Request failed: {str(e)}")
-
 
 def generate_token(fleet_id):
     """Generate a new token for the given fleet_id."""
