@@ -5,7 +5,7 @@ from typing import List, Dict, Any
 
 from core.db_con import engine
 from routes.utils import get_user_info
-from core.llm_agent.utils import get_timeout
+from core.llm_agent.utils import get_model_config
 from core.llm_agent.agent_manager import get_or_create_agent_for_fleet, get_agent_cache_stats
 
 
@@ -14,6 +14,7 @@ chat_router = APIRouter(prefix="/chat")
 class ChatRequest(BaseModel):
     messages: List[Dict[str, Any]] 
     query: str  # For frontend latest query
+    model_name: str = "llama3-70b-8192"  # Default to Groq/Llama
 
 
 @chat_router.get("/agent_stats")
@@ -33,7 +34,7 @@ async def execute_user_query(req: ChatRequest, user_info: dict = Depends(get_use
 
     # Get cached agent with fresh fleet context
     try:
-        agent = await get_or_create_agent_for_fleet(fleet_id, user)
+        agent = await get_or_create_agent_for_fleet(fleet_id, user, req.model_name)
 
     except Exception as e:
         raise HTTPException(
@@ -46,7 +47,7 @@ async def execute_user_query(req: ChatRequest, user_info: dict = Depends(get_use
         steps = []
 
         # Add timeout for the entire streaming operation
-        async with asyncio.timeout(get_timeout()):
+        async with asyncio.timeout(get_model_config()["timeout"]):
             for step in agent.stream({"messages": messages}, stream_mode="values"):
                 step["messages"][-1].pretty_print()
                 steps.append(step)

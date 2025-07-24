@@ -18,3 +18,4 @@ langchain
 langgraph
 langchain-community
 langchain-mistralai
+langchain_groq
