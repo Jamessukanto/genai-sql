@@ -148,3 +148,11 @@ Live demo: https://genai-sql-2-frontend.onrender.com <br> (Note that the demo is
 ## 📜 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+
+
+
+
+
+
+How many SRM T3 EVs are in my fleet?

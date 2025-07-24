@@ -22,12 +22,20 @@ async def enable_rls(db: Database, table: str) -> None:
     try:
         policy = f"fleet_isolation_{table}"
         await db.execute(text(f"DROP POLICY IF EXISTS {policy} ON {table};"))
-        await db.execute(text(
-            f"CREATE POLICY {policy} ON {table} FOR SELECT "
-            "USING (fleet_id = current_setting('app.fleet_id')::text);"
-        ))
+        
+        # Create a more explicit RLS policy with better error handling
+        policy_sql = f"""
+        CREATE POLICY {policy} ON {table} FOR SELECT 
+        USING (
+            fleet_id = COALESCE(current_setting('app.fleet_id', true), '')::text
+        );
+        """
+        await db.execute(text(policy_sql))
+        
         await db.execute(text(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY;"))
         await db.execute(text(f"ALTER TABLE {table} FORCE ROW LEVEL SECURITY;"))
+        
+        print(f"RLS enabled for table {table} with policy {policy}")
     except Exception as e:
         raise RuntimeError(f"Failed to enable RLS on table {table}: {e}")
 

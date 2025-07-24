@@ -116,8 +116,11 @@ class GenerateQueryNode:
                 mappings=load_semantic_map()
             ),
         }
+        print("[AGENT] GenerateQueryNode system_message:", system_message)
+        print("[AGENT] GenerateQueryNode state messages:", state["messages"])
         llm_with_tools = self.llm.bind_tools([self.run_query_tool])
         response = llm_with_tools.invoke([system_message] + state["messages"])
+        print("[AGENT] GenerateQueryNode LLM response:", response)
         # return {"messages": [response]}
         return {"messages": state["messages"] + [response]}
 
@@ -154,8 +157,11 @@ class CheckQueryNode:
         }
         tool_call = state["messages"][-1].tool_calls[0]
         user_message = {"role": "user", "content": tool_call["args"]["query"]}
+        print("[AGENT] CheckQueryNode system_message:", system_message)
+        print("[AGENT] CheckQueryNode user_message:", user_message)
         llm_with_tools = self.llm.bind_tools([self.run_query_tool], tool_choice="any")
         response = llm_with_tools.invoke([system_message, user_message])
+        print("[AGENT] CheckQueryNode LLM response:", response)
         response.id = state["messages"][-1].id
         # return {"messages": [response]}
         return {"messages": state["messages"] + [response]}

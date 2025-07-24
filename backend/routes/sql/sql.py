@@ -139,4 +139,53 @@ async def import_data(req: ImportDataRequest):
         )
 
 
+@sql_router.post("/debug_rls")
+async def debug_rls(user_info: dict = Depends(get_user_info)):
+    """Debug endpoint to check RLS and session variables."""
+    user = user_info["user"]
+    fleet_id = user_info["fleet_id"]
+
+    try:
+        async with database.connection() as con:
+            # Set session variables
+            await con.execute("SET statement_timeout = 10000;")
+            await con.execute(f"SET ROLE {user};")
+            await con.execute(f"SET app.fleet_id = '{fleet_id}';")
+            
+            # Check session variables
+            session_check = await con.fetch_all("SELECT current_setting('app.fleet_id') as fleet_id_setting;")
+            
+            # Check all vehicles without RLS
+            all_vehicles = await con.fetch_all("SELECT * FROM vehicles;")
+            
+            # Check vehicles with RLS (this should be filtered)
+            filtered_vehicles = await con.fetch_all("SELECT * FROM vehicles;")
+            
+            # Check RLS policies
+            policies = await con.fetch_all("""
+                SELECT schemaname, tablename, policyname, permissive, roles, cmd, qual 
+                FROM pg_policies 
+                WHERE tablename = 'vehicles';
+            """)
+
+        return {
+            "user": user,
+            "fleet_id": fleet_id,
+            "session_variables": [dict(r) for r in session_check],
+            "all_vehicles_count": len(all_vehicles),
+            "filtered_vehicles_count": len(filtered_vehicles),
+            "filtered_vehicles": [dict(r) for r in filtered_vehicles],
+            "policies": [dict(r) for r in policies]
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=400, 
+            detail={
+                "status": "error",
+                "message": f"Failed to debug RLS: {str(e)}"
+            }
+        )
+
+
 

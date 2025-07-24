@@ -22,6 +22,7 @@ def get_database_url() -> str:
     print(f"Connecting to database: {parsed.hostname}")
     return url
 
+
 def get_ssl_context():
     """Create an SSL context that accepts self-signed certificates."""
     ctx = ssl.create_default_context()
@@ -56,4 +57,6 @@ engine: Engine = create_engine(DATABASE_URL)
 
 # Configure database with SSL settings
 database = create_database_connection(DATABASE_URL)
+
+
 

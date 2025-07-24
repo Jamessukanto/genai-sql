@@ -22,7 +22,8 @@ async def execute_user_query(req: ChatRequest, user_info: dict = Depends(get_use
     """
     Processes a user's natural language query using an LLM agent configured per user and fleet.
     """
-    print("\n\n" + ("="*80) + "\nExecuting conversational chat query.\n")
+    print("\n" * 12)
+    print(("="*80) + "\nEXECUTING USER QUERY.\n")
     user = user_info["user"]
     fleet_id = user_info["fleet_id"]
 

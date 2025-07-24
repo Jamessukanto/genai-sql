@@ -13,7 +13,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/core/certs:/var/lib/postgresql/certs:ro
-    user: ${POSTGRES_USER}
+    user: postgres
     command: >
       postgres 
       -c ssl=on 

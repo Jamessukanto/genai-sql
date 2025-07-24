@@ -3,7 +3,8 @@ import requests
 
 # --- Configuration ---
 BASE_URL = "http://backend:8000"
-USER = "superuser"
+USER = "end_user"
+
 
 # --- Page Setup ---
 st.set_page_config(page_title="💬 Chat Assistant", layout="wide", initial_sidebar_state="expanded")
@@ -32,6 +33,7 @@ def make_api_call(endpoint, body=None, token=None, timeout=60):
     headers = {"Content-Type": "application/json"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
+    print("[FRONTEND] Sending to backend:", endpoint, body)  # Debug log
     try:
         res = requests.post(
             f"{BASE_URL}/{endpoint}",
