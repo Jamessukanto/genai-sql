@@ -5,11 +5,10 @@ A natural language interface for querying electric vehicle fleet telemetry data.
 ## 🌟 Features
 
 - Natural language to SQL conversion for fleet analytics
-- LangGraph-based LLM agent with 'mistral-medium-latest'
-- PostgreSQL with row-level security, ensuring fleets only access their own data
+- LangGraph-based LLM agent with groq-api, model: 'llama3-70b-8192'
+- PostgreSQL with RBAC
 - Real-time telemetry analysis (SOC, temperature, usage patterns)
 - JWT-based authentication
-- Simple Web UI
 
 ## 🏗 Architecture
 

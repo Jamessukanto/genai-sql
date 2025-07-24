@@ -6,7 +6,7 @@ from typing import List, Dict, Any
 from core.db_con import engine
 from routes.utils import get_user_info
 from core.llm_agent.utils import get_model_config
-from core.llm_agent.agent_manager import get_or_create_agent_for_fleet, get_agent_cache_stats
+from core.llm_agent.agent_manager import get_or_create_agent_for_fleet
 
 
 chat_router = APIRouter(prefix="/chat")
@@ -15,12 +15,6 @@ class ChatRequest(BaseModel):
     messages: List[Dict[str, Any]] 
     query: str  # For frontend latest query
     model_name: str = "llama3-70b-8192"  # Default to Groq/Llama
-
-
-@chat_router.get("/agent_stats")
-async def get_agent_stats():
-    """Get agent cache statistics for debugging."""
-    return get_agent_cache_stats()
 
 
 @chat_router.post("/execute_user_query")
@@ -33,13 +27,7 @@ async def execute_user_query(req: ChatRequest, user_info: dict = Depends(get_use
     fleet_id = user_info["fleet_id"]
 
     # Get cached agent with fresh fleet context
-    try:
-        agent = await get_or_create_agent_for_fleet(fleet_id, user, req.model_name)
-
-    except Exception as e:
-        raise HTTPException(
-            status_code=400, detail=f"Failed to set up LLM agent: {e}"
-        )
+    agent = await get_or_create_agent_for_fleet(fleet_id, user, req.model_name)
 
     # Run LLM agent with timeout
     try:
