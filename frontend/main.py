@@ -21,17 +21,10 @@ if "current_fleet_id" not in st.session_state:
 if "current_token" not in st.session_state:
     st.session_state.current_token = None
 
+
 # --- Helpers ---
 def append_message(role, content):
-    """Append a message to the session state messages.
-    
-    Args:
-        role (str): The role of the message sender (e.g., 'user', 'assistant').
-        content (str): The content of the message to be appended.
-    
-    Returns:
-        None: This method doesn't return anything, it modifies the session state in-place.
-    """
+    """Append a message to the session state messages."""
     st.session_state.messages.append({"type": role, "content": content})
 
 
@@ -70,14 +63,6 @@ def generate_token(fleet_id):
     return st.session_state.current_token
 
 
-def get_current_token():
-    """Get the current cached token."""
-    if st.session_state.current_token is None:
-        st.error("❌ No token available. Please select a fleet first.")
-        raise Exception("No token available. Please select a fleet first.")
-    return st.session_state.current_token
-
-
 # --- Sidebar with eager token generation ---
 with st.sidebar:
     st.header("Configuration")
@@ -86,11 +71,9 @@ with st.sidebar:
     # Generate token immediately when fleet_id changes OR if no token exists
     if (fleet_id != st.session_state.current_fleet_id or 
         st.session_state.current_token is None):
-        try:
-            generate_token(fleet_id)
-            st.success(f"✅ Switched to Fleet {fleet_id}")
-        except Exception as e:
-            st.error(f"❌ Failed to switch to Fleet {fleet_id}: {str(e)}")
+        generate_token(fleet_id)
+        st.success(f"✅ Access granted to Fleet {fleet_id}")
+
 
 # --- Chat Input ---
 query = st.chat_input("Type your message here...")
@@ -100,23 +83,19 @@ if query:
     try:
         with st.spinner("Thinking..."):
             token = st.session_state.current_token
-            
-            # Debug: Check if token exists
-            if not token:
-                st.error("❌ No token available. Please select a fleet first.")
-            else:
-                print(f"Using token: {token[:20]}...")
 
-                chat_response = make_api_call("api/chat/execute_user_query", {
-                    "messages": st.session_state.messages,
-                    "query": query
-                }, token)
+            chat_response = make_api_call("api/chat/execute_user_query", {
+                "messages": st.session_state.messages,
+                "query": query
+            }, token)
 
-                reply = chat_response["response"]
-                append_message("ai", reply)
+            reply = chat_response["response"]
+            append_message("ai", reply)
 
     except Exception as e:
         st.error(str(e))
+
+
 # --- Render Chat ---
 for message in st.session_state.messages:
     if message["type"] == "system":
