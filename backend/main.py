@@ -1,6 +1,5 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-# from fastapi.staticfiles import StaticFiles
 
 from core.db_con import database
 from routes.sql.sql import sql_router
@@ -27,17 +26,7 @@ app.include_router(auth_router, prefix="/api")
 
 @app.on_event("startup")
 async def on_startup():
-    """Asynchronous function that establishes a connection to the database on startup.
-    
-    Args:
-        None
-    
-    Returns:
-        None
-    
-    Raises:
-        HTTPException: If the database connection fails, with a 500 status code and an error message.
-    """
+    """Asynchronous function that establishes a connection to the database on startup."""
     try:
         await database.connect()
     except Exception as e:
@@ -47,17 +36,7 @@ async def on_startup():
 
 @app.on_event("shutdown")
 async def on_shutdown():
-    """Asynchronously handles the shutdown process by disconnecting from the database.
-    
-    Args:
-        None
-    
-    Returns:
-        None
-    
-    Raises:
-        HTTPException: If there is an error disconnecting from the database.
-    """
+    """Asynchronously handles the shutdown process by disconnecting from the database."""
     try:
         await database.disconnect()
     except Exception as e:
@@ -65,25 +44,11 @@ async def on_shutdown():
             status_code=500, detail=f"Failed to disconnect from database: {e}"
         )
 
+@app.get("/")
+async def root():
+    return {"message": "GenAI SQL Backend API", "status": "running"}
+
 @app.get("/api/ping")
 async def ping():
     return {"status": "ok"}
-
-
-# @app.get("/")
-# async def root():
-#     """Redirect root path to /app"""
-#     return RedirectResponse(url="/app")
-
-# # Serve minimal frontend under /app path
-# fe_path = os.path.abspath(
-#     os.path.join(os.path.dirname(__file__), "../frontend")
-# )
-# if os.path.isdir(fe_path):
-#     app.mount("/app", StaticFiles(directory=fe_path, html=True), name="frontend")
-# else:
-#     print(f"Warning: 'frontend' dir {fe_path} not found.")
-
-
-
 
