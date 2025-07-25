@@ -3,23 +3,16 @@ import ssl
 from databases import Database
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
-from urllib.parse import urlparse, parse_qs
 from typing import Optional
 import time
 
 
 def get_database_url() -> str:
-    """Get and validate database URL, adding required parameters if missing."""
     url = os.getenv("DATABASE_URL")
     if not url:
         raise RuntimeError("DATABASE_URL environment variable is required")
 
-    # Parse the URL to modify SSL parameters
-    parsed = urlparse(url)
-    params = parse_qs(parsed.query)
-    
-    # Keep existing SSL parameters from the URL
-    print(f"Connecting to database: {parsed.hostname}")
+    print(f"Connecting to database: {url}")
     return url
 
 
@@ -30,7 +23,8 @@ def get_ssl_context():
     ctx.verify_mode = ssl.CERT_NONE
     return ctx
 
-def create_database_connection(url: Optional[str] = None, max_retries: int = 5, retry_delay: int = 5) -> Database:
+
+def create_database_connection(url: Optional[str] = None, max_retries: int = 3, retry_delay: int = 5) -> Database:
     """
     Create a database connection with consistent SSL configuration and retry logic.
     """
@@ -53,7 +47,6 @@ def create_database_connection(url: Optional[str] = None, max_retries: int = 5, 
 
 # Initialize database connection
 DATABASE_URL = get_database_url()
-engine: Engine = create_engine(DATABASE_URL)
 
 # Configure database with SSL settings
 database = create_database_connection(DATABASE_URL)

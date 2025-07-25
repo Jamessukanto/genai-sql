@@ -2,9 +2,7 @@ import os
 from typing import Dict, Any, Tuple
 # from langchain.chat_models import init_chat_model  # [MISTRAL] Commented out for Groq
 from langchain_community.utilities import SQLDatabase
-from sqlalchemy import create_engine
 
-from core.db_con import engine
 from core.llm_agent.agent import build_agent
 from core.llm_agent.utils import get_model_config, MODELS
 from routes.chat.utils import create_session_aware_database

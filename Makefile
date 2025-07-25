@@ -12,7 +12,6 @@ setup-db:
 	docker compose exec backend \
 		python -m core.setup_data.setup_database --drop-existing
 
-
 seed-db:
 	@echo "Loading sample data..."
 	docker compose exec backend \

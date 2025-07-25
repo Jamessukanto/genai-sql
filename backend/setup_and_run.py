@@ -46,10 +46,13 @@ def main():
     else:
         print("Database not set up, running setup...")
         run_command("python core/setup_data/setup_database.py", "Database setup")
-        run_command("python core/setup_data/import_data.py", "Database seeding")
+        run_command("python core/setup_data/import_data.py --csv-dir ./data", "Database seeding")
     
     # 2. Start the app
     run_command("uvicorn main:app --host 0.0.0.0 --port 8000", "Starting FastAPI server")
 
 if __name__ == "__main__":
     main() 
+
+
+    # setup_database --drop-existing // import_data --csv-dir ./data

@@ -3,7 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 
 from core.db_con import database
-from routes.sql.sql import sql_router
 from routes.chat.chat import chat_router
 from routes.auth.auth import auth_router
 
@@ -42,7 +41,6 @@ app.add_middleware(
 )
 
 # API routes under /api prefix
-app.include_router(sql_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
 app.include_router(auth_router, prefix="/api")
 
@@ -83,7 +81,6 @@ async def root():
         "endpoints": {
             "health_check": "/api/ping",
             "chat": "/api/chat/*",
-            "sql": "/api/sql/*", 
             "auth": "/api/auth/*"
         },
         "quick_links": {

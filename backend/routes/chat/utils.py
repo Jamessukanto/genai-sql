@@ -8,7 +8,14 @@ def apply_session_variables_with_engine(engine, user: str, fleet_id: str):
     """
     with engine.connect() as con:
         con.execute(text("SET statement_timeout = 10000;"))
-        con.execute(text(f"SET ROLE {user};"))
+        
+        # Try role switching (works for development)
+        try:
+            con.execute(text(f"SET ROLE {user};"))
+            print(f"✅ Chat: Role switching successful: {user}")
+        except Exception as e:
+            print(f"⚠️ Chat: Role switching failed (Render environment): {e}")
+        
         con.execute(text(f"SET app.fleet_id = '{fleet_id}';"))
         con.commit()  
 
@@ -28,7 +35,14 @@ class SessionAwareSQLDatabase(SQLDatabase):
         """Set session variables before each query."""
         try:
             super().run(text("SET statement_timeout = 10000;"))
-            super().run(text(f"SET ROLE {self.user};"))
+            
+            # Try role switching (works for development)
+            try:
+                super().run(text(f"SET ROLE {self.user};"))
+                print(f"✅ SessionAwareSQLDatabase: Role switching successful: {self.user}")
+            except Exception as e:
+                print(f"⚠️ SessionAwareSQLDatabase: Role switching failed (Render environment): {e}")
+            
             super().run(text(f"SET app.fleet_id = '{self.fleet_id}';"))
         except Exception as e:
             print(f"Warning: Failed to set session variables: {e}")
@@ -52,7 +66,9 @@ def create_session_aware_database(user: str, fleet_id: str):
     from core.db_con import get_database_url
     
     # Create a fresh engine for this fleet context
-    fleet_engine = create_engine(get_database_url())
+    # fleet_engine = create_engine(get_database_url())
+    fleet_engine = create_engine(get_database_url(), connect_args={"options": "-c role=end_user"})
+
     
     # Apply session variables to the engine
     apply_session_variables_with_engine(fleet_engine, user, fleet_id)

@@ -11,69 +11,53 @@ async def check_role_exists(db: Database, role: str) -> bool:
     return result[0] if result else False
 
 
-async def create_superuser(db: Database) -> None:
-    """Create superuser role if it doesn't exist."""
-    if not await check_role_exists(db, "superuser"):
-        await db.execute("""
-            CREATE ROLE superuser 
+async def create_role(db: Database, role: str) -> None:
+    """Create a PostgreSQL role if it doesn't exist."""
+    if not await check_role_exists(db, role):
+        await db.execute(f"""
+            CREATE ROLE {role} 
             WITH LOGIN 
             PASSWORD 'password';
         """)
 
 
-async def create_end_user(db: Database) -> None:
-    """Create end_user role if it doesn't exist and ensure it has no superuser or bypassrls."""
-    if not await check_role_exists(db, "end_user"):
-        await db.execute("""
-            CREATE ROLE end_user 
-            WITH LOGIN 
-            PASSWORD 'password';
+async def grant_role_permissions(db: Database, db_name: str, role: str) -> None:
+    """Grant permissions for a specific role."""
+
+    # Basic permissions
+    await db.execute(f"GRANT {role} TO postgres;")
+    await db.execute(f"GRANT CONNECT ON DATABASE {db_name} TO {role};")
+    await db.execute(f"GRANT USAGE ON SCHEMA public TO {role};")
+    
+    if role == "superuser":
+        # Superuser gets all table permissions
+        await db.execute(f"GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO {role};")
+        await db.execute(f"""
+            ALTER DEFAULT PRIVILEGES IN SCHEMA public 
+            GRANT ALL PRIVILEGES ON TABLES TO {role};
         """)
-    # Always ensure end_user is not superuser and cannot bypass RLS
-    await db.execute("ALTER ROLE end_user NOSUPERUSER NOBYPASSRLS;")
-
-
-async def grant_permissions(db: Database, db_name: str) -> None:
-    """Grant necessary permissions to roles."""
-    # Grant permissions to superuser
-    await db.execute(f"GRANT CONNECT ON DATABASE {db_name} TO superuser;")
-    await db.execute("GRANT USAGE ON SCHEMA public TO superuser;")
-    await db.execute("GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO superuser;")
-    await db.execute("GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO superuser;")
-    
-    # Future table permissions for superuser
-    await db.execute("""
-        ALTER DEFAULT PRIVILEGES IN SCHEMA public 
-        GRANT ALL PRIVILEGES ON TABLES TO superuser;
-    """)
-    await db.execute("""
-        ALTER DEFAULT PRIVILEGES IN SCHEMA public 
-        GRANT ALL PRIVILEGES ON SEQUENCES TO superuser;
-    """)
-
-    # Grant permissions to end_user
-    await db.execute(f"GRANT CONNECT ON DATABASE {db_name} TO end_user;")
-    await db.execute("GRANT USAGE ON SCHEMA public TO end_user;")
-    await db.execute("GRANT SELECT ON ALL TABLES IN SCHEMA public TO end_user;")
-    
-    # Future table permissions for end_user
-    await db.execute("""
-        ALTER DEFAULT PRIVILEGES IN SCHEMA public 
-        GRANT SELECT ON TABLES TO end_user;
-    """)
+    else:
+        # Regular user gets read-only permissions
+        await db.execute(f"GRANT SELECT ON ALL TABLES IN SCHEMA public TO {role};")
+        await db.execute(f"""
+            ALTER DEFAULT PRIVILEGES IN SCHEMA public 
+            GRANT SELECT ON TABLES TO {role};
+        """)
+        if role == "end_user":
+            await db.execute("ALTER ROLE end_user NOSUPERUSER NOBYPASSRLS;")
 
 
 async def setup_users_and_permissions(db: Database, db_name: str = "fleetdb") -> None:
     """
-    Set up database users and their permissions. Creates two roles:
+    Set up permissions for two roles:
     - superuser: Has full database access for data import/setup
     - end_user: Has read-only access to all tables
     """
     try:
-        await create_superuser(db)
-        await create_end_user(db)
-        await grant_permissions(db, db_name)
-        
+        await create_role(db, "superuser")
+        await create_role(db, "end_user")
+        await grant_role_permissions(db, db_name, "superuser")
+        await grant_role_permissions(db, db_name, "end_user")        
     except Exception as e:
         raise RuntimeError(f"Failed to set up users and permissions: {e}")
 

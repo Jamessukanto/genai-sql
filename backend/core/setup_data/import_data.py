@@ -7,7 +7,7 @@ from typing import Set, List, Dict, Any, Optional
 from databases import Database
 
 from core.setup_data.table_queries import PARTITIONED_TABLES, CREATE_TABLE_QUERIES
-from core.db_con import create_database_connection
+from core.db_con import database
 
 # Data loading batch size
 IMPORT_DATA_BATCH_SIZE = 1000
@@ -23,7 +23,7 @@ TABLE_DEPENDENCIES = {
 IMPORT_ORDER = ['fleets', 'vehicles', 'alerts', 'trips']
 
 
-async def create_vehicle_partition(db: Database, vehicle_id: str, table: str) -> None:
+async def create_vehicle_partition(database: Database, vehicle_id: str, table: str) -> None:
     """Create a partition for a specific vehicle in a partitioned table."""
     try:
         partition_name = f"{table}_vehicle_{vehicle_id}"
@@ -31,7 +31,7 @@ async def create_vehicle_partition(db: Database, vehicle_id: str, table: str) ->
             CREATE TABLE IF NOT EXISTS {partition_name}
             PARTITION OF {table} FOR VALUES IN ('{vehicle_id}');
         """
-        await db.execute(query=ddl)
+        await database.execute(query=ddl)
     except Exception as e:
         raise RuntimeError(f"Failed to create partition for vehicle {vehicle_id} in table {table}: {e}")
 
@@ -85,11 +85,11 @@ def read_csv_data(csv_path: str) -> tuple[List[str], List[Dict[str, Any]]]:
         raise RuntimeError(f"Failed to read CSV file {csv_path}: {e}")
     
 
-async def create_import_functions(db: Database) -> None:
+async def create_import_functions(database: Database) -> None:
     """Create helper functions for data import."""
     try:
         # Create a function to truncate tables
-        await db.execute(query="""
+        await database.execute(query="""
             CREATE OR REPLACE FUNCTION truncate_table(table_name text)
             RETURNS void
             LANGUAGE plpgsql
@@ -104,7 +104,7 @@ async def create_import_functions(db: Database) -> None:
 
         # Create functions for each table to insert data
         for table in CREATE_TABLE_QUERIES:
-            await db.execute(query=f"""
+            await database.execute(query=f"""
                 CREATE OR REPLACE FUNCTION insert_into_{table}(
                     column_names text,
                     values_list text
@@ -135,20 +135,20 @@ def prepare_value(val: Any) -> str:
         return f"'{val}'"
 
 
-async def load_table_data(db: Database, table: str, csv_path: str) -> None:
+async def load_table_data(database: Database, table: str, csv_path: str) -> None:
     """Load data into a table from a CSV file using security definer functions."""
     try:
         if table in PARTITIONED_TABLES:
             vehicle_ids = get_vehicle_ids_from_csv(csv_path)
             for vehicle_id in vehicle_ids:
-                await create_vehicle_partition(db, vehicle_id, table)
+                await create_vehicle_partition(database, vehicle_id, table)
         
         # Temporarily disable RLS
-        await db.execute(query=f"ALTER TABLE {table} DISABLE ROW LEVEL SECURITY")
+        await database.execute(query=f"ALTER TABLE {table} DISABLE ROW LEVEL SECURITY")
         
         try:
             # Truncate the table using the security definer function
-            await db.execute(
+            await database.execute(
                 query="SELECT truncate_table(:table_name)",
                 values={"table_name": table}
             )
@@ -167,7 +167,7 @@ async def load_table_data(db: Database, table: str, csv_path: str) -> None:
                         values_str = ', '.join(values)
                         
                         # Use the security definer function to insert
-                        await db.execute(
+                        await database.execute(
                             query=f"SELECT insert_into_{table}(:column_names, :value_list)",
                             values={"column_names": column_names_str, "value_list": values_str}
                         )
@@ -176,25 +176,25 @@ async def load_table_data(db: Database, table: str, csv_path: str) -> None:
                         raise
             
             # Verify the number of imported rows
-            result = await db.fetch_one(f"SELECT COUNT(*) FROM {table}")
+            result = await database.fetch_one(f"SELECT COUNT(*) FROM {table}")
             if len(rows) != result[0]:
                 e = f"Imported {result[0]} rows into {table}. Expected: {len(rows)} rows."
                 raise RuntimeError(f"Failed to load data into table {table}: {e}")
     
         finally:
             # Re-enable RLS
-            await db.execute(query=f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY")
+            await database.execute(query=f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY")
             
     except Exception as e:
         raise RuntimeError(f"Failed to load data into table {table}: {e}")
 
 
-async def import_data(db: Database, csv_dir: str) -> None:
+async def import_data(database: Database, csv_dir: str) -> None:
     """Import data from CSV files into the database."""
     print(f"\nImporting data from {csv_dir}...")
     
     # First create the helper functions
-    await create_import_functions(db)
+    await create_import_functions(database)
     
     # Check which CSV files are available
     available_csvs = {}
@@ -230,12 +230,12 @@ async def import_data(db: Database, csv_dir: str) -> None:
     for table in CREATE_TABLE_QUERIES:
         if table in available_csvs:
             print(f"\nImporting '{table}'...")
-            await load_table_data(db, table, available_csvs[table])
+            await load_table_data(database, table, available_csvs[table])
     
     print("\nImport complete!")
 
 
-async def main(csv_dir: str, db: Database = None) -> None:
+async def main(csv_dir: str, database: Database = database) -> None:
     """Import data from CSV files into the database."""
     if not csv_dir:
         raise ValueError("CSV directory path is required")
@@ -245,20 +245,14 @@ async def main(csv_dir: str, db: Database = None) -> None:
         raise ValueError(f"\nCSV directory does not exist: {csv_dir}\n")
 
     try:
-        # Initialize database connection
-        if not db:
-            print("NO DB, creating...")
-            db = create_database_connection()
-            await db.connect()
-
-        # Import data
-        await import_data(db, csv_dir)
+        await database.connect()
+        await import_data(database, csv_dir)
         print("Data import complete!")
 
     except Exception as e:
         raise RuntimeError(f"Failed to import data: {e}")
     finally:
-        await db.disconnect()
+        await database.disconnect()
 
 
 if __name__ == "__main__":

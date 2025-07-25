@@ -4,7 +4,6 @@ import asyncio
 from typing import List, Dict, Any
 from datetime import datetime 
 
-from core.db_con import engine
 from routes.utils import get_user_info
 from core.llm_agent.utils import get_model_config
 from core.llm_agent.agent_manager import get_or_create_agent_for_fleet
