@@ -1,8 +1,10 @@
 import streamlit as st
 import requests
+import os
 
 # --- Configuration ---
-BASE_URL = "http://backend:8000"
+# Get backend URL from environment variable (for Render) or use default (for local development)
+BASE_URL = os.getenv("BACKEND_URL", "https://genai-sql-2.onrender.com")
 USER = "end_user"
 
 # --- Sample Questions ---
