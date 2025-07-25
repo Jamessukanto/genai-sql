@@ -9,7 +9,7 @@ from core.setup_data.import_data import main as import_data_main
 from routes.utils import get_user_info
 
 
-sql_router = APIRouter(prefix="/sql")
+sql_router = APIRouter(prefix="/sql", tags=["SQL Operations"])
 
 class SQLRequest(BaseModel):
     sql: str

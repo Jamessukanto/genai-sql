@@ -8,7 +8,29 @@ from routes.chat.chat import chat_router
 from routes.auth.auth import auth_router
 
 
-app = FastAPI()
+app = FastAPI(
+    title="GenAI SQL Backend API",
+    description="A FastAPI backend for GenAI SQL operations with chat, authentication, and database management",
+    version="1.0.0",
+    openapi_tags=[
+        {
+            "name": "SQL Operations",
+            "description": "Endpoints for SQL query execution, database setup, and data management"
+        },
+        {
+            "name": "Chat & AI", 
+            "description": "Endpoints for natural language chat interactions with LLM agents"
+        },
+        {
+            "name": "Authentication",
+            "description": "JWT token generation and authentication endpoints"
+        },
+        {
+            "name": "Health Check",
+            "description": "System health and status endpoints"
+        }
+    ]
+)
 
 # Enable CORS
 app.add_middleware(
@@ -45,7 +67,7 @@ async def on_shutdown():
             status_code=500, detail=f"Failed to disconnect from database: {e}"
         )
 
-@app.get("/")
+@app.get("/", tags=["Health Check"])
 async def root():
     """API overview with links to documentation"""
     return {
@@ -53,9 +75,7 @@ async def root():
         "status": "running",
         "version": "1.0.0",
         "documentation": {
-            "interactive_docs": "/docs",
             "alternative_docs": "/redoc",
-            "openapi_spec": "/openapi.json"
         },
         "endpoints": {
             "health_check": "/api/ping",
@@ -64,12 +84,11 @@ async def root():
             "auth": "/api/auth/*"
         },
         "quick_links": {
-            "try_it_out": "/docs",
             "health_check": "/api/ping"
         }
     }
 
-@app.get("/api/ping")
+@app.get("/api/ping", tags=["Health Check"])
 async def ping():
     return {"status": "ok"}
 

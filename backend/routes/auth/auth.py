@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import jwt
 
 
-auth_router = APIRouter(prefix="/auth")
+auth_router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 SECRET_KEY = "test_secret"  # TODO: Refactor in production later
 

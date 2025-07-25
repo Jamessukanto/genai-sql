@@ -10,7 +10,7 @@ from core.llm_agent.utils import get_model_config
 from core.llm_agent.agent_manager import get_or_create_agent_for_fleet
 
 
-chat_router = APIRouter(prefix="/chat")
+chat_router = APIRouter(prefix="/chat", tags=["Chat"])
 
 class ChatRequest(BaseModel):
     messages: List[Dict[str, Any]] 
