@@ -48,9 +48,14 @@ def check_database_setup():
 def main():
 
     print("Setting up database...")
-    run_command("python -m core.setup_data.setup_database --drop-existing", "Database setup")
-    run_command("python -m core.setup_data.import_data --csv-dir ./data", "Database seeding")
-    
+    run_command(
+        "python -m core.setup_data.setup_database --drop-existing --database-name genai-sql-2-postgres",
+        "Database setup"
+    )
+    run_command(
+        "python -m core.setup_data.import_data --csv-dir ./data",
+        "Database seeding"
+    )
     run_command("uvicorn main:app --host 0.0.0.0 --port 8000", "Starting FastAPI server")
 
 
