@@ -45,7 +45,6 @@ def check_database_setup():
 
 
 def main():
-
     print("Setting up database...")
     run_command("python core/setup_data/setup_database.py --drop-existing", "Database setup")
     run_command("python core/setup_data/import_data.py --csv-dir ./data", "Database seeding")
