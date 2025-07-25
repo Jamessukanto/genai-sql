@@ -151,10 +151,28 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 
 
+Ideas:
+1. Each prompt should be 'self-contained', to reduce window length
+2. 
+
+issues tackled:
+1. use quality-model for sql generation as it's more tool-use compliant
+2. reserve fast-model for consolidation (takes longest)
+3. patch run_query_tool to gracefully handle empty results 
 
 
 
 
-
-What is the SOC of vehicle GBM6296G right now?
-How many SRM T3 EVs are in my fleet?
+What is the SOC of vehicle GBM6296G right now?  
+57, no data, 
+How many SRM T3 EVs are in my fleet?      
+2, 0
+Did any SRM T3 exceed 33 °C battery temperature in the last 24 h?      
+no data, 
+What is the fleet‑wide average SOC comfort zone?”
+57.5
+Which vehicles spent > 20 % time in the 90‑100 % SOC band this week?
+no
+How many vehicles are currently driving with SOC < 30 %?
+no
+What is the total km and driving hours by my fleet over the past 7 days, and which are the most-used & least-used vehicles?

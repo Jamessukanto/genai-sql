@@ -2,41 +2,27 @@ import os, yaml
 from typing import Dict, Any
 
 MODELS = {
-    "medium": "mistral-medium-latest",
-    "small": "mistral-small-latest", 
-    "tiny": "mistral-tiny-latest",
-    "llama3-70b": "llama3-70b-8192"
+    "fast": "llama-3.1-8b-instant",
+    "quality": "llama-3.3-70b-versatile",
 }
 
 # Model configurations for API calls
 MODEL_CONFIGS: Dict[str, Dict[str, Any]] = {
-    MODELS["medium"]: {
-        "model": MODELS["medium"],
-        "temperature": 0,
-        "max_tokens": 4096,  # Example, adjust based on model limits
-        "timeout": 60,  # Timeout in seconds
-    },
-    MODELS["small"]: {
-        "model": MODELS["small"],
+    MODELS["fast"]: {
+        "model": MODELS["fast"],
         "temperature": 0,
         "max_tokens": 4096,
-        "timeout": 45,  # Timeout in seconds
+        "timeout": 30,
     },
-    MODELS["tiny"]: {
-        "model": MODELS["tiny"],
+    MODELS["quality"]: {
+        "model": MODELS["quality"],
         "temperature": 0,
         "max_tokens": 4096,
-        "timeout": 30,  # Timeout in seconds
+        "timeout": 80,
     },
-    MODELS["llama3-70b"]: {
-        "model": MODELS["llama3-70b"],
-        "temperature": 0,
-        "max_tokens": 8192,  
-        "timeout": 45,  
-    }
 }
 
-DEFAULT_MODEL = MODELS["medium"]
+DEFAULT_MODEL = MODELS["quality"]
 
 def get_model_config(model_name: str = DEFAULT_MODEL) -> Dict[str, Any]:
     """Get API configuration for specified model."""

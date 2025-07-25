@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException
 import asyncio
 from typing import List, Dict, Any
+from datetime import datetime 
 
 from core.db_con import engine
 from routes.utils import get_user_info
@@ -14,7 +15,6 @@ chat_router = APIRouter(prefix="/chat")
 class ChatRequest(BaseModel):
     messages: List[Dict[str, Any]] 
     query: str  # For frontend latest query
-    model_name: str = "llama3-70b-8192"  # Default to Groq/Llama
 
 
 @chat_router.post("/execute_user_query")
@@ -22,22 +22,28 @@ async def execute_user_query(req: ChatRequest, user_info: dict = Depends(get_use
     """
     Processes a user's natural language query using an LLM agent configured per user and fleet.
     """
-    print("\n" * 12)
-    print(("="*80) + "\nEXECUTING USER QUERY.\n")
+    print(f"\n\n{'='*60} NEW QUERY {'='*60}\n\n")
+    print(f"[TS] {datetime.now()} - Start execute_user_query" ) 
     user = user_info["user"]
     fleet_id = user_info["fleet_id"]
 
     # Get cached agent with fresh fleet context
-    agent = await get_or_create_agent_for_fleet(fleet_id, user, req.model_name)
+    agent = await get_or_create_agent_for_fleet(fleet_id, user)
+
+    # Only use the latest user message for the agent, to save time
+    if req.messages:
+        latest_message = req.messages[-1]
+        messages = [latest_message]
+    else:
+        messages = []
 
     # Run LLM agent with timeout
     try:
-        messages = req.messages
         steps = []
-
-        # Add timeout for the entire streaming operation
+        print(f"[TS] {datetime.now()} - Before agent.stream" )  # TIMESTAMPED LOG
         async with asyncio.timeout(get_model_config()["timeout"]):
             for step in agent.stream({"messages": messages}, stream_mode="values"):
+                print(f"[TS] {datetime.now()} - Step received from agent.stream" )  # TIMESTAMPED LOG
                 step["messages"][-1].pretty_print()
                 steps.append(step)
                 print()
@@ -50,6 +56,7 @@ async def execute_user_query(req: ChatRequest, user_info: dict = Depends(get_use
 
         # Final LLM output (may include intermediate tool call messages)
         final_response = steps[-1]["messages"][-1].content
+        print(f"[TS] {datetime.now()} - Returning response to client" )  # TIMESTAMPED LOG
         return {"response": final_response}
 
     except asyncio.TimeoutError as e:

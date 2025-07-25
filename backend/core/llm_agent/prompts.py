@@ -13,6 +13,9 @@ def get_schema_prompt(mappings=""):
     {mappings}
 
     Important rules for schema discovery:
+    - Only include table names from this list: vehicles, raw_telemetry, charging_sessions, processed_metrics, fleet_daily_summary, drivers, driver_trip_map, fleets, trips, maintenance_logs, geofence_events, battery_cycles, alerts.
+    - Never include anything with a dot (.) or terms like SRM T3 in the table_names argument.
+    - Deduplicate table names. Intercept the tool call before it is executed, and deduplicate the table_names argument.
     - Request schemas for ALL tables needed to answer the question
     - Include tables needed for joins (e.g., if you need vehicle data and SOC, get both vehicles and raw_telemetry)
     - Look at the semantic mappings to understand table relationships

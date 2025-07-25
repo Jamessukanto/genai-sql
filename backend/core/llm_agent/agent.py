@@ -1,3 +1,4 @@
+import os
 from langgraph.graph import START, MessagesState, StateGraph
 from langgraph.prebuilt import ToolNode
 from langchain_community.agent_toolkits import SQLDatabaseToolkit
@@ -40,13 +41,34 @@ async def build_agent(db, llm) -> StateGraph:
     get_schema_tool = next(t for t in prebuilt_tools if t.name == "sql_db_schema")
     run_query_tool = next(t for t in prebuilt_tools if t.name == "sql_db_query")
 
+    # Patch to gracefully handle empty results 
+    original_run = run_query_tool._run
+    def wrapped_run(*args, **kwargs):
+        result = original_run(*args, **kwargs)
+        if not result or (isinstance(result, list) and len(result) == 0):
+            return "No data available for this query."
+        return result
+    run_query_tool._run = wrapped_run
+
+    # Create fast LLM for final answer generation
+    from core.llm_agent.utils import get_model_config, MODELS
+    from langchain_groq import ChatGroq
+    fast_model_config = get_model_config(MODELS["fast"])
+    fast_llm = ChatGroq(
+        model=fast_model_config["model"],
+        temperature=fast_model_config["temperature"],
+        max_tokens=fast_model_config["max_tokens"],
+        api_key=os.getenv("GROQ_API_KEY")
+    )
+
     # Build state graph
     builder = StateGraph(MessagesState)  #TODO: Human in loop
 
     builder.add_node("list_tables", ListTablesNode(list_tables_tool))
     builder.add_node("call_get_schema", CallGetSchemaNode(llm, get_schema_tool))
     builder.add_node("get_schema", ToolNode([get_schema_tool], name="get_schema"))
-    builder.add_node("generate_query", GenerateQueryNode(db, llm, run_query_tool))
+#     builder.add_node("generate_query", GenerateQueryNode(db, llm, run_query_tool))
+    builder.add_node("generate_query", GenerateQueryNode(db, llm, fast_llm, run_query_tool))
     builder.add_node("check_query", CheckQueryNode(db, llm, run_query_tool))
     builder.add_node("run_query", ToolNode([run_query_tool], name="run_query"))
 

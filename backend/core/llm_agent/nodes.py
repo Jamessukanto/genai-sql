@@ -81,12 +81,14 @@ class CallGetSchemaNode:
         return {"messages": state["messages"] + [response]}
 
 class GenerateQueryNode:
-    def __init__(self, db: SQLDatabase, llm, run_query_tool):
+    # def __init__(self, db: SQLDatabase, llm, run_query_tool):
+    def __init__(self, db: SQLDatabase, llm, fast_llm, run_query_tool):
         """Initializes a new instance of the class.
         
         Args:
             db (SQLDatabase): The SQL database object to be used for database operations.
-            llm: The language model to be used for processing.
+            llm: The language model to be used for SQL generation.
+            fast_llm: The fast language model to be used for final answer generation.
             run_query_tool: A tool or function for executing database queries.
         
         Returns:
@@ -94,6 +96,7 @@ class GenerateQueryNode:
         """
         self.db = db
         self.llm = llm
+        self.fast_llm = fast_llm
         self.run_query_tool = run_query_tool
 
     def __call__(self, state: MessagesState):
@@ -116,7 +119,22 @@ class GenerateQueryNode:
                 mappings=load_semantic_map()
             ),
         }
-        llm_with_tools = self.llm.bind_tools([self.run_query_tool])
+        
+        # Use quality model for SQL generation, fast model for final answer
+        # Check if this is likely to be a final answer (no previous tool calls in recent messages)
+        recent_messages = state["messages"][-3:]  # Check last 3 messages
+        has_recent_tool_calls = any(
+            hasattr(msg, 'tool_calls') and msg.tool_calls 
+            for msg in recent_messages
+        )
+        
+        if has_recent_tool_calls:
+            # Use quality model for SQL generation
+            llm_with_tools = self.llm.bind_tools([self.run_query_tool])
+        else:
+            # Use fast model for final answer generation
+            llm_with_tools = self.fast_llm.bind_tools([self.run_query_tool])
+            
         response = llm_with_tools.invoke([system_message] + state["messages"])
         return {"messages": state["messages"] + [response]}
 
