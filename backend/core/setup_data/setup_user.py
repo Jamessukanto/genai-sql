@@ -24,12 +24,12 @@ async def create_role(db: Database, role: str) -> None:
 async def grant_role_permissions(db: Database, db_name: str, role: str) -> None:
     """Grant permissions for a specific role."""
 
-    # Get the current database user 
-    result = await db.fetch_one("SELECT current_user;")
-    current_user = result[0] if result else "postgres"  # db user is postgres in development
+    # # Get database user 
+    # result = await db.fetch_one("SELECT current_user;")
+    # db_user = result[0] if result else "postgres"  # db user is postgres in development
     
     # Basic permissions
-    await db.execute(f"GRANT {role} TO {current_user};")  # for role switching
+    # await db.execute(f"GRANT {role} TO {db_user};") 
     await db.execute(f"GRANT CONNECT ON DATABASE {db_name} TO {role};")
     await db.execute(f"GRANT USAGE ON SCHEMA public TO {role};")
     

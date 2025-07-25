@@ -46,11 +46,9 @@ def check_database_setup():
 
 def main():
 
-    if not check_database_setup():
-        print("Setting up database...")
-        run_command("python core/setup_data/setup_database.py", "Database setup")
-        run_command("python core/setup_data/import_data.py --csv-dir ./data", "Database seeding")
-    
+    print("Setting up database...")
+    run_command("python core/setup_data/setup_database.py --drop-existing", "Database setup")
+    run_command("python core/setup_data/import_data.py --csv-dir ./data", "Database seeding")
     run_command("uvicorn main:app --host 0.0.0.0 --port 8000", "Starting FastAPI server")
 
 
