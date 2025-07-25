@@ -8,7 +8,8 @@ import os
 def run_command(cmd, description):
     print(f"Running: {description}")
     print(f"Command: {cmd}")
-    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+    # Run commands from the backend directory to ensure proper Python path
+    result = subprocess.run(cmd, shell=True, capture_output=True, text=True, cwd="/opt/render/project/src/backend")
 
     if result.returncode != 0:
         print(f"Error: {result.stderr}")
@@ -45,9 +46,11 @@ def check_database_setup():
 
 
 def main():
+
     print("Setting up database...")
-    run_command("python core/setup_data/setup_database.py --drop-existing", "Database setup")
-    run_command("python core/setup_data/import_data.py --csv-dir ./data", "Database seeding")
+    run_command("python -m core.setup_data.setup_database --drop-existing", "Database setup")
+    run_command("python -m core.setup_data.import_data --csv-dir ./data", "Database seeding")
+    
     run_command("uvicorn main:app --host 0.0.0.0 --port 8000", "Starting FastAPI server")
 
 
