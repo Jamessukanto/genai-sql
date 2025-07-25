@@ -6,11 +6,15 @@ import os
 
 def run_command(cmd, description):
     print(f"Running: {description}")
+    print(f"Command: {cmd}")
     result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
     if result.returncode != 0:
         print(f"Error: {result.stderr}")
+        print(f"Return code: {result.returncode}")
         sys.exit(1)
     print(f"Success: {description}")
+    if result.stdout:
+        print(f"Output: {result.stdout}")
 
 def check_database_setup():
     """Check if database is already set up by trying to connect"""

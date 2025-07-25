@@ -51,8 +51,11 @@ app.include_router(auth_router, prefix="/api")
 async def on_startup():
     """Asynchronous function that establishes a connection to the database on startup."""
     try:
+        print("Attempting to connect to database...")
         await database.connect()
+        print("Database connection successful!")
     except Exception as e:
+        print(f"Database connection failed: {e}")
         raise HTTPException(
             status_code=500, detail=f"Failed to connect to database: {e}"
         )   
