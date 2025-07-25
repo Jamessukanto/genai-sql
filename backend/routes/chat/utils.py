@@ -13,17 +13,6 @@ def apply_session_variables_with_engine(engine, user: str, fleet_id: str):
         con.commit()  
 
 
-def apply_session_variables_with_sql_database(db: SQLDatabase, user: str, fleet_id: str):
-    """
-    Ensures the specific connection used by SQLDatabase has the correct session state.
-    This function sets up the session variables that will be used for all subsequent queries.
-    """
-    # Set session variables that will be used for all queries through this SQLDatabase instance
-    db.run(text("SET statement_timeout = 10000;"))
-    db.run(text(f"SET ROLE {user};"))
-    db.run(text(f"SET app.fleet_id = '{fleet_id}';"))
-
-
 class SessionAwareSQLDatabase(SQLDatabase):
     """
     A SQLDatabase subclass that ensures session variables are set before each query execution.
@@ -58,7 +47,6 @@ class SessionAwareSQLDatabase(SQLDatabase):
 def create_session_aware_database(user: str, fleet_id: str):
     """
     Creates a SQLDatabase instance with session variable enforcement.
-    This ensures that all queries through this database instance will use the correct fleet context.
     """
     from sqlalchemy import create_engine
     from core.db_con import get_database_url

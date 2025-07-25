@@ -2,7 +2,8 @@ import os, yaml
 from typing import Dict, Any
 
 MODELS = {
-    "fast": "llama-3.1-8b-instant",
+    "fast": "qwen/qwen3-32b",
+    # "fast": "llama-3.1-8b-instant",
     "quality": "llama-3.3-70b-versatile",
 }
 

@@ -20,7 +20,7 @@ services:
       -c ssl_cert_file=/var/lib/postgresql/certs/server.crt 
       -c ssl_key_file=/var/lib/postgresql/certs/server.key
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -45,6 +45,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+    environment:
+      BACKEND_URL: ${BACKEND_URL}
     ports:
       - "8501:8501"
     depends_on:
