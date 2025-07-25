@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 
 from core.db_con import database
 from routes.sql.sql import sql_router
@@ -46,7 +47,27 @@ async def on_shutdown():
 
 @app.get("/")
 async def root():
-    return {"message": "GenAI SQL Backend API", "status": "running"}
+    """API overview with links to documentation"""
+    return {
+        "message": "GenAI SQL Backend API",
+        "status": "running",
+        "version": "1.0.0",
+        "documentation": {
+            "interactive_docs": "/docs",
+            "alternative_docs": "/redoc",
+            "openapi_spec": "/openapi.json"
+        },
+        "endpoints": {
+            "health_check": "/api/ping",
+            "chat": "/api/chat/*",
+            "sql": "/api/sql/*", 
+            "auth": "/api/auth/*"
+        },
+        "quick_links": {
+            "try_it_out": "/docs",
+            "health_check": "/api/ping"
+        }
+    }
 
 @app.get("/api/ping")
 async def ping():
