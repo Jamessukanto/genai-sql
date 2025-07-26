@@ -40,11 +40,11 @@ A natural language interface for querying electric vehicle fleet telemetry data.
 │   │       ├── setup_database.py  # Sets up tables + roles with RLS
 │   │       └── import_data.py     # Seed database
 │   ├── data/                      # Data samples
-│   ├── setup_render.py            # Render-specific server setup 
 │   ├── routes/                
 │   │   ├── auth/                  # JWT auth endpoint
 │   │   └── chat/                  # LLM chat endpoint
 │   ├── tests/                  
+│   ├── setup_render.py            # Render-specific server setup 
 │   └── main.py                    # FastAPI app
 │  
 └── frontend/                  
@@ -89,7 +89,7 @@ A natural language interface for querying electric vehicle fleet telemetry data.
    ```
    <br>
 
-   Start FastAPI backend, frontend, and PostgreSQL services: 
+   Start backend, frontend, and database services: 
    ```bash
    # This seeds sample data, too!
    make dev
