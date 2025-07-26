@@ -47,16 +47,14 @@ def check_database_setup():
 
 
 def main():
-    print("=== MAIN FUNCTION STARTING ===")
     print("Setting up database...")
-    print("About to call run_command for database setup...")
     
 
-    # run_command(
-    #     "python -m core.setup_database.setup_database --drop-existing --database-name genai_sql_2_postgres",
-    #     "Database setup"
-    # )
-    # print("Database setup command completed")
+    run_command(
+        "python -m core.setup_database.setup_database --drop-existing --database-name genai_sql_2_postgres",
+        "Database setup"
+    )
+    print("Database setup command completed")
 
     
     # print("About to call run_command for import data...")
