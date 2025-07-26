@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-print("=== setup_and_run.py is starting ===")
+
 import subprocess
 import sys
 import time
 import os
-
+import uvicorn
 
 def run_command(cmd, description):
     print(f"Running: {description}")
@@ -60,16 +60,11 @@ def main():
         "python -m core.setup_database.import_data --csv-dir ./data",
         "Database seeding"
     )
-    print("Import data command completed")
 
+    # Start server
+    print("\n\nStarting Uvicorn server on 0.0.0.0:8000...")
+    uvicorn.run("main:app", host="0.0.0.0", port=8000)
     
-    print("\n\n\nAbout to call run_command for uvicorn...\n\n\n")
-    
-    # run_command("uvicorn main:app --host 0.0.0.0 --port 8000", "Starting FastAPI server")
-    # print("Uvicorn command completed")
-    
-    # print("=== MAIN FUNCTION COMPLETED ===")
-
 
 if __name__ == "__main__":
     main() 
