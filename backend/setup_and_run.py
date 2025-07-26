@@ -48,40 +48,37 @@ def check_database_setup():
 
 def main():
     print("=== MAIN FUNCTION STARTING ===")
-    
     print("Setting up database...")
     print("About to call run_command for database setup...")
     
-    try:
-        run_command(
-            "python -m core.setup_database.setup_database --drop-existing --database-name genai_sql_2_postgres",
-            "Database setup"
-        )
-        print("Database setup command completed")
-    except Exception as e:
-        print(f"Database setup failed: {e}")
-        raise
+
+    # run_command(
+    #     "python -m core.setup_database.setup_database --drop-existing --database-name genai_sql_2_postgres",
+    #     "Database setup"
+    # )
+    # print("Database setup command completed")
+
     
-    print("About to call run_command for import data...")
-    try:
-        run_command(
-            "python -m core.setup_database.import_data --csv-dir ./data",
-            "Database seeding"
-        )
-        print("Import data command completed")
-    except Exception as e:
-        print(f"Import data failed: {e}")
-        raise
+    # print("About to call run_command for import data...")
+    # try:
+    #     run_command(
+    #         "python -m core.setup_database.import_data --csv-dir ./data",
+    #         "Database seeding"
+    #     )
+    #     print("Import data command completed")
+    # except Exception as e:
+    #     print(f"Import data failed: {e}")
+    #     raise
     
-    print("About to call run_command for uvicorn...")
-    try:
-        run_command("uvicorn main:app --host 0.0.0.0 --port 8000", "Starting FastAPI server")
-        print("Uvicorn command completed")
-    except Exception as e:
-        print(f"Uvicorn failed: {e}")
-        raise
+    # print("About to call run_command for uvicorn...")
+    # try:
+    #     run_command("uvicorn main:app --host 0.0.0.0 --port 8000", "Starting FastAPI server")
+    #     print("Uvicorn command completed")
+    # except Exception as e:
+    #     print(f"Uvicorn failed: {e}")
+    #     raise
     
-    print("=== MAIN FUNCTION COMPLETED ===")
+    # print("=== MAIN FUNCTION COMPLETED ===")
 
 
 if __name__ == "__main__":
