@@ -1,4 +1,5 @@
 import os
+import traceback
 from typing import Dict, Any, Tuple
 
 from langchain_community.utilities import SQLDatabase
@@ -31,7 +32,7 @@ async def get_or_create_agent_for_fleet(
     # Clear cache if this is a different fleet than what's cached
     cached_fleets = [key.split(':')[0] for key in _fleet_agent_cache.keys()]
     current_fleet = f"fleet_{fleet_id}"
-    
+
     if cached_fleets and current_fleet not in cached_fleets:
         print(f"Fleet changed to {fleet_id}, clearing cache")
         clear_agent_cache()
@@ -58,13 +59,11 @@ async def get_or_create_agent_for_fleet(
         
     except Exception as e:
         print(f"Error creating agent: {e}")
-        import traceback
         print(f"Traceback: {traceback.format_exc()}")
         raise e
 
 
 # TODO: Refactor for production
-
 def create_session_aware_SQLdatabase(engine, user: str, fleet_id: str):
     """Creates SQLDatabase with specified role and fleet_id."""    
 

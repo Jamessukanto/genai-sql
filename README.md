@@ -54,6 +54,8 @@ A natural language interface for querying electric vehicle fleet telemetry data.
 ```
 
 
+![Home Page](assets/home.png)
+
 ## 🌐 Live Demo
 
 **Try it out online!** 🚀
@@ -70,31 +72,32 @@ A natural language interface for querying electric vehicle fleet telemetry data.
 
 ## 🚀 Quick Start
 
-### 1. Clone the repository:
+Requirements:
+- docker
+- docker compose (not docker-compose)
+
+### 1. Development:
+
    ```bash
    git clone https://github.com/Jamessukanto/genai-sql.git
    cd genai-sql
-   ```
 
-### 2. Development:
-
-   Requirements:
-   - docker
-   - docker compose (not docker-compose)
-
-
-   ```bash
    # Get your API key at https://groq.com/
    export GROQ_API_KEY="get_your_api_key"
    ```
    <br>
 
-   Start backend, frontend, and database services: 
    ```bash
-   # This seeds sample data, too!
+   # Start backend, frontend, and database services:
+   # (This sets up the database and seeds sample data, too)
    make dev
+
+   # To pull them down:
+   # (This remove volumes, too)
+   make clean
+
    ```
-   [http://localhost:8501/](http://localhost:8501/)
+   [View frontend container](http://localhost:8501/)
    
    <br>
 
@@ -111,20 +114,10 @@ A natural language interface for querying electric vehicle fleet telemetry data.
 
    </details>
 
-
-
-
-### 3. Test:
+### 2. Test:
    ```bash
    make test
    ```
-
-### 4. Clean up
-   ```bash
-   # This remove volumes, too
-   make clean
-   ```
-
 
 
 
