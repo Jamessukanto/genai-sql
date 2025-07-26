@@ -61,12 +61,10 @@ def create_session_aware_database(user: str, fleet_id: str):
     """Creates SQLDatabase with specified role and fleet_id."""    
 
     engine = create_engine(DATABASE_URL)
-    engine = apply_session_variables_with_engine(engine, user, fleet_id)
-    
+
+    # Set role and fleet_id
     with engine.connect() as con:
         con.execute(text("SET statement_timeout = 10000;"))
-        
-        # Set role and fleet_id
         con.execute(text(f"SET ROLE {user};"))
         con.execute(text(f"SET app.fleet_id = '{fleet_id}';"))
         con.commit()  
