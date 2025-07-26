@@ -15,6 +15,8 @@ A natural language interface for querying electric vehicle fleet telemetry data.
 - PostgreSQL with RBAC
 - JWT-based authentication
 
+<br>
+
 ## 🏗 Architecture
 
 ```
@@ -26,6 +28,8 @@ A natural language interface for querying electric vehicle fleet telemetry data.
                             │            Row-Level Security          │
                             └────────────────────────────────────────┘
 ```
+
+<br>
 
 ## 📁 Project Structure
 
