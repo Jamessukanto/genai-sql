@@ -49,7 +49,7 @@ def main():
 
     print("Setting up database...")
     run_command(
-        "python -m core.setup_data.setup_database --drop-existing --database-name genai-sql-2-postgres",
+        "python -m core.setup_data.setup_database --drop-existing --database-name genai_sql_2_postgres",
         "Database setup"
     )
     run_command(

@@ -3,6 +3,7 @@ import asyncio
 from databases import Database
 from sqlalchemy import text
 from typing import Optional
+import os
 
 from core.setup_data.table_queries import CREATE_TABLE_QUERIES
 from core.setup_data.setup_user import setup_users_and_permissions
@@ -56,14 +57,24 @@ async def setup_database_schema(database: Database, drop_existing: bool = False)
 async def main(
     drop_existing: bool = False,
     database: Optional[Database] = database,
-    database_name: Optional[str] = "fleetdb"
+    database_name: Optional[str] = None
 ) -> None:
     """Set up database schema and configure permissions."""
     try:
+        # Extract database name from DATABASE_URL if not provided
+        if database_name is None:
+            from urllib.parse import urlparse
+            url = os.getenv("DATABASE_URL")
+            if url:
+                parsed = urlparse(url)
+                database_name = parsed.path.lstrip('/')
+            else:
+                database_name = "fleetdb"  # fallback
+        
         print(f"Setting up database with database connection: {database}, database_name: {database_name}")
         await database.connect()
         await setup_database_schema(database, drop_existing)
-        await setup_users_and_permissions(database, database_name or "fleetdb")
+        await setup_users_and_permissions(database, database_name)
         print("Database setup complete!")
 
     except Exception as e:
