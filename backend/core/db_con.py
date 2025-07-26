@@ -1,7 +1,8 @@
 import os
 import ssl
 from databases import Database
-from typing import Optional
+from sqlalchemy import create_engine
+from typing import Optional, Union
 import time
 
 
@@ -13,41 +14,53 @@ def get_database_url() -> str:
     print(f"Connecting to database: {url}")
     return url
 
-
 def get_ssl_context():
-    """Create an SSL context that accepts self-signed certificates."""
     ctx = ssl.create_default_context()
     ctx.check_hostname = False
     ctx.verify_mode = ssl.CERT_NONE
     return ctx
 
+def get_connection_config():
+    return {
+        "min_connections": 1,
+        "max_connections": 4,
+        "ssl_context": get_ssl_context()
+    }
 
-def create_database_connection(url: Optional[str] = None, max_retries: int = 3, retry_delay: int = 5) -> Database:
-    """
-    Create a database connection with consistent SSL configuration and retry logic.
-    """
+def create_connection(
+    url: Optional[str] = None, 
+    config: Optional[dict] = get_connection_config(),
+    retry_delay: int = 2,
+    max_retries: int = 3
+) -> Union[Database, create_engine]:
+    """Connection factory with consistent SSL configuration and retry logic."""
     db_url = url or get_database_url()
-    ssl_context = get_ssl_context()
-    
+
     for attempt in range(max_retries):
         try:
-            return Database(
+            database = Database(
                 db_url,
-                min_size=1,
-                max_size=4,
-                ssl=ssl_context,
+                min_size=config["min_connections"],
+                max_size=config["max_connections"],
+                ssl=config["ssl_context"],
             )
+            engine = create_engine(
+                db_url,
+                pool_size=config["min_connections"],
+                max_overflow=config["max_connections"] - config["min_connections"],
+                connect_args={"sslmode": "require", "sslcert": None, "sslkey": None}
+            )
+            return database, engine
+
         except Exception as e:
             if attempt == max_retries - 1:
-                raise
-            print(f"Database connection attempt {attempt + 1} failed: {e}")
+                raise Exception(f"Failed to connect to database after {max_retries} attempts: {e}")
+            print(f"Connection attempt {attempt + 1} failed: {e}")
             time.sleep(retry_delay)
 
-# Initialize database connection
-DATABASE_URL = get_database_url()
 
-# Configure database with SSL settings
-database = create_database_connection(DATABASE_URL)
+database, engine = create_connection()
+
 
 
 

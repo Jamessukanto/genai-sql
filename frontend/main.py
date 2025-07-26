@@ -106,15 +106,11 @@ def main():
 
     st.title("SQL Chat Assistant Demo")
     
-    # Render sidebar 
     _ = render_sidebar()
     
-    # Handle pending question from sidebar
     handle_pending_question()
     
-    # Chat input
     query = st.chat_input("Type your message here...")
-    
     if query:
         process_chat_query(query)
     
