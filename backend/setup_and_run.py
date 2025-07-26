@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+print("=== setup_and_run.py is starting ===")
 import subprocess
 import sys
 import time

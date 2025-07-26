@@ -40,9 +40,9 @@ async def get_or_create_agent_for_fleet(fleet_id: str, user: str, model_name: st
             llm = None  # Set to None for clarity
 
         # Create a session-aware database with proper session variable enforcement
-        db = create_session_aware_database(user, fleet_id)
+        engine = create_session_aware_database(user, fleet_id)
 
-        agent = await build_agent(db, llm)
+        agent = await build_agent(engine, llm)
         _fleet_agent_cache[cache_key] = agent
     else:
         print(f"Using cached agent: {cache_key}")
