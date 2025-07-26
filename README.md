@@ -2,12 +2,17 @@
 
 A natural language interface for querying electric vehicle fleet telemetry data. 
 
+<br>
+
+![Home Page](assets/home.png)
+
+<br>
+
 ## 🌟 Features
 
 - Natural language to SQL conversion for fleet analytics
-- LangGraph-based LLM agent with groq-api, model: 'llama3-70b-8192'
+- LangGraph-based LLM agent with groq-api
 - PostgreSQL with RBAC
-- Real-time telemetry analysis (SOC, temperature, usage patterns)
 - JWT-based authentication
 
 ## 🏗 Architecture
@@ -54,8 +59,6 @@ A natural language interface for querying electric vehicle fleet telemetry data.
 ```
 
 
-![Home Page](assets/home.png)
-
 ## 🌐 Live Demo
 
 **Try it out online!** 🚀
@@ -90,6 +93,7 @@ Requirements:
    ```bash
    # Start backend, frontend, and database services:
    # (This sets up the database and seeds sample data, too)
+   # View frontend container at http://localhost:8501/
    make dev
 
    # To pull them down:
@@ -97,8 +101,7 @@ Requirements:
    make clean
 
    ```
-   [View frontend container](http://localhost:8501/)
-   
+
    <br>
 
 
