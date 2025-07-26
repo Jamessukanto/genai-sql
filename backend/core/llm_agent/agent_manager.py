@@ -26,20 +26,33 @@ async def get_or_create_agent_for_fleet(
         return _fleet_agent_cache[cache_key]
 
     print(f"Creating new agent: {cache_key}")     
-    model_config = get_model_config(model_name)
-    db = create_session_aware_database(user, fleet_id)
+    try:
+        model_config = get_model_config(model_name)
+        print(f"Model config obtained: {model_config}")
+        
+        db = create_session_aware_database(user, fleet_id)
+        print(f"Database created successfully")
 
-    llm = ChatGroq(
-        model=model_config["model"],
-        temperature=model_config["temperature"],
-        max_tokens=model_config["max_tokens"],
-        api_key=os.getenv("GROQ_API_KEY")
-    )
+        llm = ChatGroq(
+            model=model_config["model"],
+            temperature=model_config["temperature"],
+            max_tokens=model_config["max_tokens"],
+            api_key=os.getenv("GROQ_API_KEY")
+        )
+        print(f"LLM created successfully")
 
-    agent = await build_agent(db, llm)
-    _fleet_agent_cache[cache_key] = agent
+        agent = await build_agent(db, llm)
+        print(f"Agent built successfully")
+        
+        _fleet_agent_cache[cache_key] = agent
+        print(f"Agent cached successfully")
 
-    return agent
+        return agent
+    except Exception as e:
+        print(f"Error creating agent: {e}")
+        import traceback
+        print(f"Traceback: {traceback.format_exc()}")
+        raise e
 
 
 # TODO: Refactor for production

@@ -26,18 +26,20 @@ async def execute_user_query(req: ChatRequest, user_info: dict = Depends(get_use
     user = user_info["user"]
     fleet_id = user_info["fleet_id"]
 
-    # Get cached agent with fresh fleet context
-    agent = await get_or_create_agent_for_fleet(fleet_id, user)
-
-    # Only use the latest user message for the agent, to save time
-    if req.messages:
-        latest_message = req.messages[-1]
-        messages = [latest_message]
-    else:
-        messages = []
-
-    # Run LLM agent with timeout
     try:
+        # Get cached agent with fresh fleet context
+        print(f"[TS] {datetime.now()} - Getting agent for fleet {fleet_id}, user {user}")
+        agent = await get_or_create_agent_for_fleet(fleet_id, user)
+        print(f"[TS] {datetime.now()} - Agent obtained successfully")
+
+        # Only use the latest user message for the agent, to save time
+        if req.messages:
+            latest_message = req.messages[-1]
+            messages = [latest_message]
+        else:
+            messages = []
+
+        # Run LLM agent with timeout
         steps = []
         print(f"[TS] {datetime.now()} - Before agent.stream" )  # TIMESTAMPED LOG
         async with asyncio.timeout(get_model_config()["timeout"]):
@@ -59,13 +61,18 @@ async def execute_user_query(req: ChatRequest, user_info: dict = Depends(get_use
         return {"response": final_response}
 
     except asyncio.TimeoutError as e:
+        print(f"[TS] {datetime.now()} - Timeout error: {e}")
         raise HTTPException(
             status_code=504,
             detail=f"Request timed out while waiting for LLM agent: {e}"
         )
     except Exception as e:
+        print(f"[TS] {datetime.now()} - Exception in execute_user_query: {e}")
+        print(f"[TS] {datetime.now()} - Exception type: {type(e)}")
+        import traceback
+        print(f"[TS] {datetime.now()} - Traceback: {traceback.format_exc()}")
         raise HTTPException(
-            status_code=400, detail=f"Failed to run LLM agent: {e}"
+            status_code=500, detail=f"Failed to run LLM agent: {e}"
         )
     
 
