@@ -15,11 +15,26 @@ from core.db_con import engine
 _fleet_agent_cache: Dict[str, Tuple[Any, SQLDatabase]] = {}
 
 
+def clear_agent_cache():
+    """Clear the agent cache to force fresh connections."""
+    global _fleet_agent_cache
+    _fleet_agent_cache.clear()
+    print("Agent cache cleared")
+
+
 async def get_or_create_agent_for_fleet(
     fleet_id: str, user: str, model_name: str = "llama-3.3-70b-versatile"
 ):
     """Get cached LLM agent for fleet or create new one."""
     cache_key = f"fleet_{fleet_id}:{user}:{model_name}"
+
+    # Clear cache if this is a different fleet than what's cached
+    cached_fleets = [key.split(':')[0] for key in _fleet_agent_cache.keys()]
+    current_fleet = f"fleet_{fleet_id}"
+    
+    if cached_fleets and current_fleet not in cached_fleets:
+        print(f"Fleet changed to {fleet_id}, clearing cache")
+        clear_agent_cache()
 
     if cache_key in _fleet_agent_cache:
         print(f"Using cached agent: {cache_key}")
@@ -27,27 +42,20 @@ async def get_or_create_agent_for_fleet(
 
     print(f"Creating new agent: {cache_key}")     
     try:
-        model_config = get_model_config(model_name)
-        print(f"Model config obtained: {model_config}")
-        
+        model_config = get_model_config(model_name)        
         db = create_session_aware_SQLdatabase(engine, user, fleet_id)
-        print(f"Database created successfully")
-
         llm = ChatGroq(
             model=model_config["model"],
             temperature=model_config["temperature"],
             max_tokens=model_config["max_tokens"],
             api_key=os.getenv("GROQ_API_KEY")
         )
-        print(f"LLM created successfully")
 
         agent = await build_agent(db, llm)
-        print(f"Agent built successfully")
         
         _fleet_agent_cache[cache_key] = agent
-        print(f"Agent cached successfully")
-
         return agent
+        
     except Exception as e:
         print(f"Error creating agent: {e}")
         import traceback

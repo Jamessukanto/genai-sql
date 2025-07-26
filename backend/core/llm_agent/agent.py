@@ -11,6 +11,7 @@ from core.llm_agent.nodes import (
     should_continue,
 )
 from core.llm_agent.utils import handle_empty_results, get_model_config, MODELS
+from sqlalchemy import text
 
 
 async def build_agent(db, llm) -> StateGraph:
@@ -46,6 +47,17 @@ async def build_agent(db, llm) -> StateGraph:
     # Patch to gracefully handle empty results 
     original_run = run_query_tool._run
     run_query_tool._run = handle_empty_results(original_run)
+
+
+
+#     # Patch to gracefully handle empty results 
+#     original_run = run_query_tool._run
+#     def wrapper(*args, **kwargs):
+#         result = original_run(*args, **kwargs)
+#         if not result or (isinstance(result, list) and len(result) == 0):
+#             return "No data available for this query."
+#         return result
+#     run_query_tool._run = wrapper
 
     # Use fast LLM for NL answer generation
     fast_model_config = get_model_config(MODELS["fast"])
