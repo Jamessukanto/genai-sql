@@ -50,16 +50,28 @@ def main():
     print("Setting up database...")
 
     # Setup tables, roles with RLS
+    print("=== Starting database setup ===")
     run_command(
         "python -m core.setup_database.setup_database --drop-existing --database-name genai_sql_2_postgres",
         "Database setup"
     )
+    print("=== Database setup completed ===")
 
     # Seed data
+    print("=== Starting data seeding ===")
     run_command(
         "python -m core.setup_database.import_data --csv-dir ./data",
         "Database seeding"
     )
+    print("=== Data seeding completed ===")
+
+    # Verify roles were created
+    print("=== Verifying role setup ===")
+    run_command(
+        "python check_roles.py",
+        "Role verification"
+    )
+    print("=== Role verification completed ===")
 
     # Start server
     print("\n\nStarting Uvicorn server on 0.0.0.0:8000...")
