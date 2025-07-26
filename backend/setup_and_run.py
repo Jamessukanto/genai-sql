@@ -48,11 +48,14 @@ def check_database_setup():
 
 def main():
     print("Setting up database...")
+
+    # Setup tables, roles with RLS
     run_command(
         "python -m core.setup_database.setup_database --drop-existing --database-name genai_sql_2_postgres",
         "Database setup"
     )
 
+    # Seed data
     run_command(
         "python -m core.setup_database.import_data --csv-dir ./data",
         "Database seeding"
@@ -61,6 +64,7 @@ def main():
 
     
     print("\n\n\nAbout to call run_command for uvicorn...\n\n\n")
+    
     run_command("uvicorn main:app --host 0.0.0.0 --port 8000", "Starting FastAPI server")
     print("Uvicorn command completed")
     
