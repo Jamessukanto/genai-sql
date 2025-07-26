@@ -63,6 +63,8 @@ A natural language interface for querying electric vehicle fleet telemetry data.
 ```
 
 
+<br>
+
 ## 🌐 Live Demo
 
 **Try it out online!** 🚀
