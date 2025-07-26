@@ -48,25 +48,21 @@ def check_database_setup():
 
 def main():
     print("Setting up database...")
-    
-
     run_command(
         "python -m core.setup_database.setup_database --drop-existing --database-name genai_sql_2_postgres",
         "Database setup"
     )
     print("Database setup command completed")
 
+
     
-    # print("About to call run_command for import data...")
-    # try:
-    #     run_command(
-    #         "python -m core.setup_database.import_data --csv-dir ./data",
-    #         "Database seeding"
-    #     )
-    #     print("Import data command completed")
-    # except Exception as e:
-    #     print(f"Import data failed: {e}")
-    #     raise
+    print("\n\n\nAbout to call run_command for import data...\n\n\n")
+    run_command(
+        "python -m core.setup_database.import_data --csv-dir ./data",
+        "Database seeding"
+    )
+    print("Import data command completed")
+
     
     # print("About to call run_command for uvicorn...")
     # try:
