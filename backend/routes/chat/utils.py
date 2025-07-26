@@ -10,12 +10,12 @@ def apply_session_variables_with_engine(engine, user: str, fleet_id: str):
     with engine.connect() as con:
         con.execute(text("SET statement_timeout = 10000;"))
         
-        # Try role switching (works for development)
+        # Try role switching (needed for RLS to work properly)
         try:
             con.execute(text(f"SET ROLE {user};"))
             print(f"✅ Chat: Role switching successful: {user}")
         except Exception as e:
-            print(f"⚠️ Chat: Role switching failed (Render environment): {e}")
+            print(f"⚠️ Chat: Role switching failed: {e}")
         
         con.execute(text(f"SET app.fleet_id = '{fleet_id}';"))
         con.commit()  
