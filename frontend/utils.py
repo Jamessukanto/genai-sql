@@ -47,14 +47,35 @@ def make_api_call(endpoint, body=None, token=None, timeout=60):
 
 def generate_token(fleet_id):
     """Generate a new token for the given fleet_id."""
-    token_response = make_api_call("api/auth/generate_jwt_token", {
-        "sub": USER,
-        "fleet_id": fleet_id,
-        "exp_hours": 1
-    })
+    import time
     
-    # Update session state
-    st.session_state.current_token = token_response["token"]
-    st.session_state.current_fleet_id = fleet_id
+    # Add a small delay to prevent rapid requests
+    time.sleep(0.5)
     
-    return st.session_state.current_token 
+    try:
+        token_response = make_api_call("api/auth/generate_jwt_token", {
+            "sub": USER,
+            "fleet_id": fleet_id,
+            "exp_hours": 1
+        })
+        
+        # Update session state
+        st.session_state.current_token = token_response["token"]
+        st.session_state.current_fleet_id = fleet_id
+        
+        return st.session_state.current_token
+    except Exception as e:
+        if "Too Many Requests" in str(e):
+            print("Too Many Requests")
+            # Wait a bit longer and retry once
+            time.sleep(2)
+            token_response = make_api_call("api/auth/generate_jwt_token", {
+                "sub": USER,
+                "fleet_id": fleet_id,
+                "exp_hours": 1
+            })
+            st.session_state.current_token = token_response["token"]
+            st.session_state.current_fleet_id = fleet_id
+            return st.session_state.current_token
+        else:
+            raise e 
