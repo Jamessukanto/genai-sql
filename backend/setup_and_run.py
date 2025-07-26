@@ -65,8 +65,8 @@ def main():
     
     print("\n\n\nAbout to call run_command for uvicorn...\n\n\n")
     
-    run_command("uvicorn main:app --host 0.0.0.0 --port 8000", "Starting FastAPI server")
-    print("Uvicorn command completed")
+    # run_command("uvicorn main:app --host 0.0.0.0 --port 8000", "Starting FastAPI server")
+    # print("Uvicorn command completed")
     
     # print("=== MAIN FUNCTION COMPLETED ===")
 

@@ -180,7 +180,7 @@ async def load_table_data(database: Database, table: str, csv_path: str) -> None
 
 async def import_data(database: Database, csv_dir: str) -> None:
     """Import data from CSV files into the database."""
-    print(f"\nImporting data from {csv_dir}...")
+    print(f"Importing data from {csv_dir}...")
     
     # First create the helper functions
     await create_import_functions(database)
