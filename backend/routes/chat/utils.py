@@ -1,5 +1,6 @@
 from sqlalchemy import text
 from langchain_community.utilities import SQLDatabase
+import os
 
 
 def apply_session_variables_with_engine(engine, user: str, fleet_id: str):
@@ -65,9 +66,17 @@ def create_session_aware_database(user: str, fleet_id: str):
     from sqlalchemy import create_engine
     from core.db_con import get_database_url
     
-    # Create a fresh engine for this fleet context
-    # fleet_engine = create_engine(get_database_url())
-    fleet_engine = create_engine(get_database_url(), connect_args={"options": "-c role=end_user"})
+    # Check if we're in Render environment (where role switching fails)
+    is_render = os.getenv("RENDER", "").lower() == "true"
+    
+    if is_render:
+        # In Render, connect directly as end_user if that's what we want
+        # For now, use the default connection and skip role switching
+        print("🔄 Render environment detected - using direct connection without role switching")
+        fleet_engine = create_engine(get_database_url())
+    else:
+        # In development, try role switching
+        fleet_engine = create_engine(get_database_url(), connect_args={"options": "-c role=end_user"})
 
     
     # Apply session variables to the engine
