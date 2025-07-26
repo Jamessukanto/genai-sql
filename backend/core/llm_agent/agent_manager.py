@@ -1,84 +1,62 @@
 import os
 from typing import Dict, Any, Tuple
-# from langchain.chat_models import init_chat_model  # [MISTRAL] Commented out for Groq
+
 from langchain_community.utilities import SQLDatabase
+from langchain_groq import ChatGroq
+# from langchain.chat_models import init_chat_model  # [MISTRAL]
+from sqlalchemy import create_engine, text
 
 from core.llm_agent.agent import build_agent
 from core.llm_agent.utils import get_model_config, MODELS
-from routes.chat.utils import create_session_aware_database
+from core.db_con import DATABASE_URL
 
-# Add Groq import
-from langchain_groq import ChatGroq
 
 # Global cache for fleet-based agent instances and their databases
 _fleet_agent_cache: Dict[str, Tuple[Any, SQLDatabase]] = {}
 
-async def get_or_create_agent_for_fleet(fleet_id: str, user: str, model_name: str = "llama-3.3-70b-versatile"):
-    """
-    Get cached agent for fleet or create new one, with fresh fleet context applied.
-    """
+
+async def get_or_create_agent_for_fleet(
+    fleet_id: str, user: str, model_name: str = "llama-3.3-70b-versatile"
+):
+    """Get cached LLM agent for fleet or create new one."""
     cache_key = f"fleet_{fleet_id}:{user}:{model_name}"
-    
-    if cache_key not in _fleet_agent_cache:
-        print(f"Creating new agent: {cache_key}")
-        
-        # Create fresh model and database
-        from core.llm_agent.utils import MODELS
-        model_config = get_model_config(model_name)
 
-        # Accept new Groq model names directly
-        groq_models = [MODELS["fast"], MODELS["quality"]]
-        if model_name in groq_models:
-            from langchain_groq import ChatGroq
-            llm = ChatGroq(
-                model=model_config["model"],
-                temperature=model_config["temperature"],
-                max_tokens=model_config["max_tokens"],
-                api_key=os.getenv("GROQ_API_KEY")
-            )
-        else:
-            llm = None  # Set to None for clarity
-
-        # Create a session-aware database with proper session variable enforcement
-        engine = create_session_aware_database(user, fleet_id)
-
-        agent = await build_agent(engine, llm)
-        _fleet_agent_cache[cache_key] = agent
-    else:
+    if cache_key in _fleet_agent_cache:
         print(f"Using cached agent: {cache_key}")
-    
-    return _fleet_agent_cache[cache_key]
+        return _fleet_agent_cache[cache_key]
 
-def clear_agent_cache(fleet_id: str = None, user: str = None):
-    """
-    Clear agent cache for specific fleet/user or all.
-    
-    Args:
-        fleet_id: Specific fleet to clear, or None to clear all
-        user: Specific user to clear, or None to clear all
-    """
-    if fleet_id is None and user is None:
-        _fleet_agent_cache.clear()
-        print("Cleared all fleet agent cache")
-    elif fleet_id is not None and user is None:
-        keys_to_remove = [key for key in _fleet_agent_cache.keys() if key.startswith(f"{fleet_id}:")]
-        for key in keys_to_remove:
-            del _fleet_agent_cache[key]
-        print(f"Cleared agent cache for fleet {fleet_id}")
-    elif fleet_id is not None and user is not None:
-        keys_to_remove = [key for key in _fleet_agent_cache.keys() if key.startswith(f"{fleet_id}:{user}:")]
-        for key in keys_to_remove:
-            del _fleet_agent_cache[key]
-        print(f"Cleared agent cache for fleet {fleet_id}, user {user}")
+    print(f"Creating new agent: {cache_key}")     
+    model_config = get_model_config(model_name)
+    db = create_session_aware_database(user, fleet_id)
 
-def get_agent_cache_stats():
-    """
-    Get statistics about the agent cache.
+    llm = ChatGroq(
+        model=model_config["model"],
+        temperature=model_config["temperature"],
+        max_tokens=model_config["max_tokens"],
+        api_key=os.getenv("GROQ_API_KEY")
+    )
+
+    agent = await build_agent(db, llm)
+    _fleet_agent_cache[cache_key] = agent
+
+    return agent
+
+
+# TODO: Refactor for production
+
+def create_session_aware_database(user: str, fleet_id: str):
+    """Creates SQLDatabase with specified role and fleet_id."""    
+
+    engine = create_engine(DATABASE_URL)
+    engine = apply_session_variables_with_engine(engine, user, fleet_id)
     
-    Returns:
-        Dict with cache statistics
-    """
-    return {
-        "total_cached_agents": len(_fleet_agent_cache),
-        "cache_keys": list(_fleet_agent_cache.keys())
-    } 
+    with engine.connect() as con:
+        con.execute(text("SET statement_timeout = 10000;"))
+        
+        # Set role and fleet_id
+        con.execute(text(f"SET ROLE {user};"))
+        con.execute(text(f"SET app.fleet_id = '{fleet_id}';"))
+        con.commit()  
+
+    database = SQLDatabase(engine)
+    return database

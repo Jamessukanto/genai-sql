@@ -43,3 +43,15 @@ def load_semantic_map():
 
     return "\n".join(mappings_str)
 
+def handle_empty_results(original_run):
+    """
+    Wrapper function to handle empty results from database queries.
+    Takes the original run function as a parameter to avoid closure issues.
+    """
+    def wrapper(*args, **kwargs):
+        result = original_run(*args, **kwargs)
+        if not result or (isinstance(result, list) and len(result) == 0):
+            return "No data available for this query."
+        return result
+    return wrapper
+

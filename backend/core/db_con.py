@@ -1,8 +1,6 @@
 import os
 import ssl
 from databases import Database
-from sqlalchemy import create_engine
-from sqlalchemy.engine import Engine
 from typing import Optional
 import time
 

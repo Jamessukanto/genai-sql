@@ -1,8 +1,8 @@
 import os
 from langgraph.graph import START, MessagesState, StateGraph
 from langgraph.prebuilt import ToolNode
+from langchain_groq import ChatGroq
 from langchain_community.agent_toolkits import SQLDatabaseToolkit
-
 from core.llm_agent.nodes import (
     ListTablesNode,
     CallGetSchemaNode,
@@ -10,6 +10,8 @@ from core.llm_agent.nodes import (
     CheckQueryNode,
     should_continue,
 )
+from core.llm_agent.utils import handle_empty_results, get_model_config, MODELS
+
 
 async def build_agent(db, llm) -> StateGraph:
     """
@@ -43,16 +45,9 @@ async def build_agent(db, llm) -> StateGraph:
 
     # Patch to gracefully handle empty results 
     original_run = run_query_tool._run
-    def wrapped_run(*args, **kwargs):
-        result = original_run(*args, **kwargs)
-        if not result or (isinstance(result, list) and len(result) == 0):
-            return "No data available for this query."
-        return result
-    run_query_tool._run = wrapped_run
+    run_query_tool._run = handle_empty_results(original_run)
 
-    # Create fast LLM for final answer generation
-    from core.llm_agent.utils import get_model_config, MODELS
-    from langchain_groq import ChatGroq
+    # Use fast LLM for NL answer generation
     fast_model_config = get_model_config(MODELS["fast"])
     fast_llm = ChatGroq(
         model=fast_model_config["model"],
@@ -63,7 +58,6 @@ async def build_agent(db, llm) -> StateGraph:
 
     # Build state graph
     builder = StateGraph(MessagesState)  #TODO: Human in loop
-
     builder.add_node("list_tables", ListTablesNode(list_tables_tool))
     builder.add_node("call_get_schema", CallGetSchemaNode(llm, get_schema_tool))
     builder.add_node("get_schema", ToolNode([get_schema_tool], name="get_schema"))
@@ -80,7 +74,6 @@ async def build_agent(db, llm) -> StateGraph:
     builder.add_edge("check_query", "run_query")
     builder.add_edge("run_query", "generate_query")
 
-    # Compile into an agent
     agent = builder.compile()
     return agent
 

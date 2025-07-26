@@ -5,23 +5,13 @@ import os
 # --- Configuration ---
 # Get backend URL from environment variable (for Render) or use default (for local development)
 BASE_URL = os.getenv("BACKEND_URL", "https://genai-sql-2.onrender.com")
-print()
-print()
-print()
-print()
-print()
-print()
-print()
-print()
-print()
-print(BASE_URL)
 USER = "end_user"
 
 # --- Sample Questions ---
 SAMPLE_QUESTIONS = [
     "What is the SOC of vehicle GBM6296G right now?",
     "How many SRM T3 EVs are in my fleet?",
-    "What is the fleet‑wide average SOC comfort zone?"
+    "What is the fleet‑wide average SOC comfort zone?",
 ]
 
 # --- Helpers ---
