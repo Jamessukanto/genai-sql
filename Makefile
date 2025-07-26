@@ -10,12 +10,12 @@ setup-ssl-certs:
 setup-db:
 	@echo "Setting up database schema..."
 	docker compose exec backend \
-		python -m core.setup_data.setup_database --drop-existing
+		python -m core.setup_database.setup_database --drop-existing
 
 seed-db:
 	@echo "Loading sample data..."
 	docker compose exec backend \
-		python -m core.setup_data.import_data --csv-dir ./data
+		python -m core.setup_database.import_data --csv-dir ./data
 
 dev: setup-ssl-certs
 	docker compose up --build -d

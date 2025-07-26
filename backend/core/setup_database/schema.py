@@ -1,3 +1,12 @@
+from databases import Database
+from sqlalchemy import text
+from typing import Dict, List
+
+
+# ============================================================================
+# TABLE DEFINITIONS
+# ============================================================================
+
 PARTITIONED_TABLES = ["raw_telemetry", "processed_metrics"]
 
 # Order of table creation matters due to foreign key constraints
@@ -66,7 +75,6 @@ CREATE_TABLE_QUERIES = {
             dod_pct DOUBLE PRECISION,
             soh_pct DOUBLE PRECISION
     );""",
-    # Note the partitioning by vehicle_id
     "raw_telemetry": """
         CREATE TABLE IF NOT EXISTS raw_telemetry (
             ts TIMESTAMP NOT NULL,
@@ -81,7 +89,6 @@ CREATE_TABLE_QUERIES = {
             odo_km DOUBLE PRECISION
         ) PARTITION BY LIST (vehicle_id);
     """,
-    # Note the partitioning by vehicle_id
     "processed_metrics": """
         CREATE TABLE IF NOT EXISTS processed_metrics (
             ts TIMESTAMP NOT NULL,
@@ -133,3 +140,77 @@ CREATE_TABLE_QUERIES = {
 }
 
 
+# ============================================================================
+# SCHEMA MANAGEMENT
+# ============================================================================
+
+async def enable_rls(database: Database, table: str) -> None:
+    """Enable row-level security on a table with fleet_id-based isolation."""
+    policy = f"fleet_isolation_{table}"
+
+    try:
+        await database.execute(text(f"DROP POLICY IF EXISTS {policy} ON {table};"))
+        
+        # Create policy
+        policy_sql = f"""
+        CREATE POLICY {policy} ON {table} FOR SELECT 
+        USING (
+            fleet_id = COALESCE(current_setting('app.fleet_id', true), '')::text
+        );
+        """
+        await database.execute(text(policy_sql))
+        
+        # Enable policy
+        await database.execute(text(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY;"))
+        await database.execute(text(f"ALTER TABLE {table} FORCE ROW LEVEL SECURITY;"))
+        print(f"RLS enabled for table {table} with policy {policy}")
+
+    except Exception as e:
+        raise RuntimeError(f"Failed to enable RLS on table {table}: {e}")
+
+
+async def create_table(database: Database, table: str, ddl: str, drop_existing: bool = False) -> None:
+    """Create a single table with optional RLS setup."""
+    print(f"Creating table '{table}'...")
+    try:
+        if drop_existing:
+            await database.execute(text(f"DROP TABLE IF EXISTS {table} CASCADE"))
+
+        # Create table
+        await database.execute(text(ddl))
+
+        # Enable RLS if table has fleet_id
+        if "fleet_id" in ddl:
+            await enable_rls(database, table)
+
+    except Exception as e:
+        raise RuntimeError(f"Failed to create table {table}: {e}")
+
+
+async def setup_database_schema(database: Database, drop_existing: bool = False) -> None:
+    """Set up the complete database schema with tables and RLS policies."""
+    print("\nSetting up database schema...")
+
+    for table, ddl in CREATE_TABLE_QUERIES.items():
+        await create_table(database, table, ddl, drop_existing)
+
+    print("✅ Database schema setup complete!")
+
+
+# ============================================================================
+# UTILITY FUNCTIONS
+# ============================================================================
+
+def get_tables_with_fleet_id() -> List[str]:
+    """Get list of tables that have fleet_id column and need RLS."""
+    return [table for table, ddl in CREATE_TABLE_QUERIES.items() if "fleet_id" in ddl]
+
+
+def get_partitioned_tables() -> List[str]:
+    """Get list of partitioned tables."""
+    return PARTITIONED_TABLES.copy()
+
+
+def get_all_tables() -> List[str]:
+    """Get list of all tables in the schema."""
+    return list(CREATE_TABLE_QUERIES.keys()) 

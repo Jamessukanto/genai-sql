@@ -34,7 +34,7 @@ A natural language interface for querying electric vehicle fleet telemetry data.
 │   │   ├── db_con.py           # Database connection 
 │   │   ├── llm_agent/          # LLM agent & semantic mapping
 │   │   ├── setup-ssl-certs.sh  # Set up SSL certs 
-│   │   └── setup_data/         # Set up tables, roles, RLS and seed data
+│   │   └── setup_database/         # Set up tables, roles, RLS and seed data
 │   ├── data/                   # Sample data
 │   ├── main.py                 # FastAPI app
 │   ├── setup_and_run.py        # Backend setup for Render

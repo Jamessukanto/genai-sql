@@ -6,7 +6,7 @@ import asyncio
 from typing import Set, List, Dict, Any, Optional
 from databases import Database
 
-from core.setup_data.table_queries import PARTITIONED_TABLES, CREATE_TABLE_QUERIES
+from core.setup_database.schema import PARTITIONED_TABLES, CREATE_TABLE_QUERIES
 from core.db_con import database
 
 # Data loading batch size
