@@ -28,6 +28,13 @@ class SuperuserRole:
         # Grant role switching
         await db.execute(f"GRANT superuser TO {db_user};")
         
+        # Also grant to postgres for local development
+        try:
+            await db.execute("GRANT superuser TO postgres;")
+            print(f"✅ Granted superuser to postgres")
+        except Exception as e:
+            print(f"⚠️ Could not grant superuser to postgres: {e}")
+        
         # Grant all permissions (one statement per call)
         await db.execute(f"GRANT CONNECT ON DATABASE \"{db_name}\" TO superuser;")
         await db.execute(f"GRANT USAGE ON SCHEMA public TO superuser;")
@@ -57,6 +64,13 @@ class EndUserRole:
         
         # Grant role switching
         await db.execute(f"GRANT end_user TO {db_user};")
+        
+        # Also grant to postgres for local development
+        try:
+            await db.execute("GRANT end_user TO postgres;")
+            print(f"✅ Granted end_user to postgres")
+        except Exception as e:
+            print(f"⚠️ Could not grant end_user to postgres: {e}")
         
         # Grant read-only permissions (one statement per call)
         await db.execute(f"GRANT CONNECT ON DATABASE \"{db_name}\" TO end_user;")
@@ -96,6 +110,17 @@ class RoleManager:
         
         # Get database user for role granting
         result = await db.fetch_one("SELECT current_user;")
+        print()
+        print()
+        print()
+
+        print(f"Current user: {result[0]}")
+        print("CURRENT USER")
+        print()
+        print()
+        print()
+        print()
+        print()
         self.db_user = result[0] if result else "postgres"
         
         # Create role

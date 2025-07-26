@@ -27,29 +27,30 @@ A natural language interface for querying electric vehicle fleet telemetry data.
 ```
 .
 ├── Makefile                    
-├── docker-compose.yml          
+├── docker-compose.yml    
+│   
 ├── backend/                   
 │   ├── Dockerfile
-│   ├── core/
-│   │   ├── db_con.py           # Database connection 
-│   │   ├── llm_agent/          # LLM agent & semantic mapping
-│   │   ├── setup-ssl-certs.sh  # Set up SSL certs 
-│   │   └── setup_database/         # Set up tables, roles, RLS and seed data
-│   ├── data/                   # Sample data
-│   ├── main.py                 # FastAPI app
-│   ├── setup_and_run.py        # Backend setup for Render
 │   ├── requirements.txt
-│   ├── routes/                 # Endpoints
-│   │   ├── auth/               # JWT authentication
-│   │   ├── chat/               # LLM chat interface
-│   │   ├── sql/                # Database operations
-│   │   └── utils.py
-│   └── tests/                 
+│   ├── core/
+│   │   ├── db_con.py              # Database connection 
+│   │   ├── llm_agent/             # LLM agent & semantic mapping
+│   │   ├── setup-ssl-certs.sh  
+│   │   └── setup_database/     
+│   │       ├── setup_database.py  # Sets up tables + roles with RLS
+│   │       └── import_data.py     # Seed database
+│   ├── data/                      # Data samples
+│   ├── setup_render.py            # Render-specific server setup 
+│   ├── routes/                
+│   │   ├── auth/                  # JWT auth endpoint
+│   │   └── chat/                  # LLM chat endpoint
+│   ├── tests/                  
+│   └── main.py                    # FastAPI app
+│  
 └── frontend/                  
     ├── Dockerfile
-    ├── main.py                 # Streamlit app
-    ├── utils.py             
-    └── requirements.txt
+    ├── requirements.txt                   
+    └── main.py                    # Streamlit app
 ```
 
 
