@@ -52,11 +52,7 @@ def main():
         "python -m core.setup_database.setup_database --drop-existing --database-name genai_sql_2_postgres",
         "Database setup"
     )
-    print("Database setup command completed")
 
-
-    
-    print("\n\n\nAbout to call run_command for import data...\n\n\n")
     run_command(
         "python -m core.setup_database.import_data --csv-dir ./data",
         "Database seeding"
@@ -64,13 +60,9 @@ def main():
     print("Import data command completed")
 
     
-    # print("About to call run_command for uvicorn...")
-    # try:
-    #     run_command("uvicorn main:app --host 0.0.0.0 --port 8000", "Starting FastAPI server")
-    #     print("Uvicorn command completed")
-    # except Exception as e:
-    #     print(f"Uvicorn failed: {e}")
-    #     raise
+    print("\n\n\nAbout to call run_command for uvicorn...\n\n\n")
+    run_command("uvicorn main:app --host 0.0.0.0 --port 8000", "Starting FastAPI server")
+    print("Uvicorn command completed")
     
     # print("=== MAIN FUNCTION COMPLETED ===")
 

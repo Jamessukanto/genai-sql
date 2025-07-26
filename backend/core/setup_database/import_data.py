@@ -37,20 +37,9 @@ async def create_vehicle_partition(database: Database, vehicle_id: str, table: s
 
 
 def get_vehicle_ids_from_csv(csv_path: str) -> Set[str]:
-    """Extract unique vehicle IDs from a CSV file.
-    
-    This function uses constant-time comparison when checking for the required column
-    to prevent timing attacks.
-    
-    Args:
-        csv_path: Path to the CSV file containing vehicle data
-        
-    Returns:
-        Set of unique vehicle IDs from the CSV
-        
-    Raises:
-        ValueError: If the vehicle_id column is missing
-        RuntimeError: If there are issues reading the file
+    """
+    Extract unique vehicle IDs from a CSV file. 
+    Uses constant-time comparison when checking for the required column
     """
     try:
         with open(csv_path, "r") as csv_file:
@@ -229,7 +218,7 @@ async def import_data(database: Database, csv_dir: str) -> None:
     # If all dependencies are met, proceed with import
     for table in CREATE_TABLE_QUERIES:
         if table in available_csvs:
-            print(f"\nImporting '{table}'...")
+            print(f"Importing '{table}'...")
             await load_table_data(database, table, available_csvs[table])
     
     print("\nImport complete!")
