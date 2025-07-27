@@ -8,10 +8,12 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from utils import (
     SAMPLE_QUESTIONS,
+    SAMPLE_ANSWERS,
     append_message,
     truncate_text,
     make_api_call,
-    generate_token
+    generate_token,
+    load_css
 )
 
 # ============================================================================
@@ -22,6 +24,9 @@ st.set_page_config(
     layout="wide", 
     initial_sidebar_state="expanded"
 )
+
+# Load CSS
+load_css()
 
 # ============================================================================
 # SESSION STATE INITIALIZATION
@@ -60,10 +65,12 @@ def render_sidebar():
         
         for i, question in enumerate(SAMPLE_QUESTIONS):
             with st.container():
-                col1, col2 = st.columns([4, 1])
+                col1, col2 = st.columns([6, 1])
                 
                 with col1:
-                    st.text(truncate_text(question))
+                    st.markdown(f'<div class="question-text">{truncate_text(question)}</div>', unsafe_allow_html=True)
+                    # Show answer below the question
+                    st.markdown(f'<div class="sample-answer">{SAMPLE_ANSWERS[i]}</div>', unsafe_allow_html=True)
                 
                 with col2:
                     if st.button("→", key=f"send_btn_{i}", help="Send to chat"):

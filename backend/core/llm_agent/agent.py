@@ -1,5 +1,5 @@
 import os
-from langgraph.graph import START, MessagesState, StateGraph
+from langgraph.graph import START, END, MessagesState, StateGraph
 from langgraph.prebuilt import ToolNode
 from langchain_groq import ChatGroq
 from langchain_community.agent_toolkits import SQLDatabaseToolkit
@@ -49,16 +49,6 @@ async def build_agent(db, llm) -> StateGraph:
     run_query_tool._run = handle_empty_results(original_run)
 
 
-
-#     # Patch to gracefully handle empty results 
-#     original_run = run_query_tool._run
-#     def wrapper(*args, **kwargs):
-#         result = original_run(*args, **kwargs)
-#         if not result or (isinstance(result, list) and len(result) == 0):
-#             return "No data available for this query."
-#         return result
-#     run_query_tool._run = wrapper
-
     # Use fast LLM for NL answer generation
     fast_model_config = get_model_config(MODELS["fast"])
     fast_llm = ChatGroq(
@@ -84,7 +74,27 @@ async def build_agent(db, llm) -> StateGraph:
     builder.add_edge("get_schema", "generate_query")
     builder.add_conditional_edges("generate_query", should_continue)
     builder.add_edge("check_query", "run_query")
-    builder.add_edge("run_query", "generate_query")
+    
+    # Add conditional edge from run_query to either END or generate_query
+    def should_continue_after_query(state: MessagesState):
+        """After running a query, check if we should continue or end."""
+        last_message = state["messages"][-1]
+        # Check if the last message is a tool result (indicating we need to generate final answer)
+        is_tool_result = (
+            hasattr(last_message, 'content') and 
+            last_message.content and 
+            isinstance(last_message.content, str) and
+            ('[' in last_message.content and ']' in last_message.content)  # Tool result format
+        )
+        
+        if is_tool_result:
+            # Continue to generate_query to create natural language response
+            return "generate_query"
+        else:
+            # It's already a natural language response, end
+            return END
+    
+    builder.add_conditional_edges("run_query", should_continue_after_query)
 
     agent = builder.compile()
     return agent

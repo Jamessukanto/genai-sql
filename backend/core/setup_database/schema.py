@@ -151,13 +151,46 @@ async def enable_rls(database: Database, table: str) -> None:
     try:
         await database.execute(text(f"DROP POLICY IF EXISTS {policy} ON {table};"))
         
-        # Create policy
-        policy_sql = f"""
-        CREATE POLICY {policy} ON {table} FOR SELECT 
-        USING (
-            fleet_id = COALESCE(current_setting('app.fleet_id', true), '')::text
-        );
-        """
+        # Direct fleet_id filtering
+        if "fleet_id" in CREATE_TABLE_QUERIES[table]:
+            policy_sql = f"""
+            CREATE POLICY {policy} ON {table} FOR SELECT 
+            USING (
+                fleet_id = COALESCE(current_setting('app.fleet_id', true), '')::text
+            );
+            """
+        # Join-based filtering for tables without fleet_id
+        elif table in ["alerts", "geofence_events", "maintenance_logs", "battery_cycles", 
+                    "raw_telemetry", "processed_metrics", "charging_sessions", "trips"]:
+            # Tables that reference vehicles
+            policy_sql = f"""
+            CREATE POLICY {policy} ON {table} FOR SELECT 
+            USING (
+                vehicle_id IN (
+                    SELECT vehicle_id FROM vehicles 
+                    WHERE fleet_id = COALESCE(current_setting('app.fleet_id', true), '')::text
+                )
+            );
+            """
+        # Special case: references trips and drivers
+        elif table == "driver_trip_map":
+            policy_sql = f"""
+            CREATE POLICY {policy} ON {table} FOR SELECT 
+            USING (
+                trip_id IN (
+                    SELECT t.trip_id FROM trips t
+                    JOIN vehicles v ON t.vehicle_id = v.vehicle_id
+                    WHERE v.fleet_id = COALESCE(current_setting('app.fleet_id', true), '')::text
+                )
+            );
+            """
+        else:
+            # Default: no filtering
+            policy_sql = f"""
+            CREATE POLICY {policy} ON {table} FOR SELECT 
+            USING (TRUE);
+            """
+        
         await database.execute(text(policy_sql))
         
         # Enable policy
@@ -179,15 +212,14 @@ async def create_table(database: Database, table: str, ddl: str, drop_existing: 
         # Create table
         await database.execute(text(ddl))
 
-        # Enable RLS if table has fleet_id
-        if "fleet_id" in ddl:
-            await enable_rls(database, table)
+        # Enable RLS on ALL tables (not just those with fleet_id)
+        await enable_rls(database, table)
 
     except Exception as e:
         raise RuntimeError(f"Failed to create table {table}: {e}")
 
 
-async def setup_database_schema(database: Database, drop_existing: bool = False) -> None:
+async def setup_database_schema_with_RLS(database: Database, drop_existing: bool = False) -> None:
     """Set up the complete database schema with tables and RLS policies."""
     print("\nSetting up database schema...")
 
@@ -195,22 +227,3 @@ async def setup_database_schema(database: Database, drop_existing: bool = False)
         await create_table(database, table, ddl, drop_existing)
 
     print("✅ Database schema setup complete!")
-
-
-# ============================================================================
-# UTILITY FUNCTIONS
-# ============================================================================
-
-def get_tables_with_fleet_id() -> List[str]:
-    """Get list of tables that have fleet_id column and need RLS."""
-    return [table for table, ddl in CREATE_TABLE_QUERIES.items() if "fleet_id" in ddl]
-
-
-def get_partitioned_tables() -> List[str]:
-    """Get list of partitioned tables."""
-    return PARTITIONED_TABLES.copy()
-
-
-def get_all_tables() -> List[str]:
-    """Get list of all tables in the schema."""
-    return list(CREATE_TABLE_QUERIES.keys()) 

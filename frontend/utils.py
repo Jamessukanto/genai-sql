@@ -7,11 +7,25 @@ import os
 BASE_URL = os.getenv("BACKEND_URL", "https://genai-sql-2.onrender.com")
 USER = "end_user"
 
-# --- Sample Questions ---
+# --- Sample Questions and Answers ---
 SAMPLE_QUESTIONS = [
     "What is the SOC of vehicle GBM6296G right now?",
     "How many SRM T3 EVs are in my fleet?",
-    "What is the fleet‑wide average SOC comfort zone?",
+    "Did any SRM T3 exceed 33 °C battery temperature in the last 24 h?",
+    "What is the fleet-wide average SOC comfort zone?",
+    "Which vehicles spent > 20 % time in the 90-100 % SOC band this week?",
+    "How many vehicles are currently driving with SOC < 30 %?",
+    "What is the total km and driving hours by my fleet over the past 7 days, and which are the most-used & least-used vehicles?",
+]
+
+SAMPLE_ANSWERS = [
+    "57% (or no data available)",
+    "2 vehicles (or 0 vehicles)",
+    "No data available",
+    "57.5%",
+    "No vehicles found",
+    "No vehicles currently driving with SOC < 30%",
+    "No data available for the past 7 days",
 ]
 
 # --- Helpers ---
@@ -19,7 +33,7 @@ def append_message(role, content):
     """Append a message to the session state messages."""
     st.session_state.messages.append({"type": role, "content": content})
 
-def truncate_text(text, max_length=38):
+def truncate_text(text, max_length=42):
     """Truncate text to max_length with ellipsis if longer."""
     if len(text) <= max_length:
         return text
@@ -78,4 +92,9 @@ def generate_token(fleet_id):
             st.session_state.current_fleet_id = fleet_id
             return st.session_state.current_token
         else:
-            raise e 
+            raise e
+
+def load_css():
+    """Load external CSS file."""
+    with open('style.css') as f:
+        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True) 

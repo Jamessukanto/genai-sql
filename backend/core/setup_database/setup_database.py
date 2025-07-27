@@ -4,7 +4,7 @@ from databases import Database
 from typing import Optional
 import os
 
-from core.setup_database.schema import setup_database_schema
+from core.setup_database.schema import setup_database_schema_with_RLS
 from core.setup_database.roles import RoleManager
 from core.db_con import database
 
@@ -30,12 +30,10 @@ async def main(
         
         await database.connect()
 
-        # Set up schema (tables + RLS)
-        await setup_database_schema(
+        await setup_database_schema_with_RLS(
             database, drop_existing
         )
 
-        # Set up roles
         await RoleManager().setup_roles(
             database, database_name, ["superuser", "end_user"]
         )

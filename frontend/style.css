@@ -1,0 +1,22 @@
+/* Sidebar width and layout */
+[data-testid="stSidebar"] {
+    width: 380px !important;
+}
+
+/* Align question text and button vertically */
+.question-text {
+    display: flex;
+    align-items: flex-start;
+    min-height: 20px;
+    margin-bottom: 0px;
+    padding-bottom: 0px;
+}
+
+/* Style for sample answers */
+.sample-answer {
+    font-size: 0.8em;
+    color: #898989;
+    font-style: italic;
+    margin-bottom: 12px; /* Add space between question groups */
+}
+
