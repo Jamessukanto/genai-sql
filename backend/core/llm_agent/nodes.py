@@ -95,9 +95,28 @@ class GenerateQueryNode:
             None: This method doesn't return anything; it initializes instance attributes.
         """
         self.db = db
-        self.llm = llm
+        self.quality_llm = llm
         self.fast_llm = fast_llm
         self.run_query_tool = run_query_tool
+
+    def _detect_multiple_questions(self, state: MessagesState) -> bool:
+        """Naive detection if user asked multiple questions."""
+        
+        user_question = ""
+        for msg in state["messages"]:
+            if hasattr(msg, 'content') and msg.content and "?" in msg.content:
+                user_question = msg.content
+                break
+        
+        # Keywords for detection of multiple questions
+        has_multiple_questions = user_question.count("?") > 1 or any(
+            phrase in user_question.lower() for phrase in [
+                " what about ", " how about ", " also tell me ", " plus ", 
+                " and which ", " and what ", " and how ", " and when ",
+                " and where ", " and who ", " and why ", " additionally, ", 
+            ]
+        )
+        return has_multiple_questions
 
     def __call__(self, state: MessagesState):
         """Invokes an LLM with tools to process a state of messages.
@@ -110,6 +129,12 @@ class GenerateQueryNode:
             dict: A dictionary containing the updated messages, including the LLM's response.
         
         """
+        if self._detect_multiple_questions(state):
+            return {"messages": state["messages"] + [AIMessage(content=(
+                "I can help you with that! "
+                "To give you the clearest answer, could you please ask one question at a time?"
+            ))]}
+
         system_message = {
             "role": "system",
             "content": generate_query_prompt(
@@ -120,20 +145,21 @@ class GenerateQueryNode:
             ),
         }
         
-        # Use quality model for SQL generation, fast model for final answer
-        # Check if this is likely to be a final answer (no previous tool calls in recent messages)
-        recent_messages = state["messages"][-3:]  # Check last 3 messages
-        has_recent_tool_calls = any(
-            hasattr(msg, 'tool_calls') and msg.tool_calls 
-            for msg in recent_messages
+        # Check if the last message is a tool result (indicating we need to generate final answer)
+        last_message = state["messages"][-1]
+        is_tool_result = (
+            hasattr(last_message, 'content') and 
+            last_message.content and 
+            isinstance(last_message.content, str) and
+            ('[' in last_message.content and ']' in last_message.content)  # Tool result format
         )
         
-        if has_recent_tool_calls:
-            # Use quality model for SQL generation
-            llm_with_tools = self.llm.bind_tools([self.run_query_tool])
-        else:
-            # Use fast model for final answer generation
-            llm_with_tools = self.fast_llm.bind_tools([self.run_query_tool])
+        # Use fast model for NL generation; quality model for SQL generation
+        llm_with_tools = (
+            self.fast_llm.bind_tools([self.run_query_tool]) 
+            if is_tool_result 
+            else self.quality_llm.bind_tools([self.run_query_tool])
+        )
             
         response = llm_with_tools.invoke([system_message] + state["messages"])
         return {"messages": state["messages"] + [response]}

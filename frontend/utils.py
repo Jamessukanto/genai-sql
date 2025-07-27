@@ -19,13 +19,13 @@ SAMPLE_QUESTIONS = [
 ]
 
 SAMPLE_ANSWERS = [
-    "57% (or no data available)",
-    "2 vehicles (or 0 vehicles)",
-    "No data available",
-    "57.5%",
-    "No vehicles found",
-    "No vehicles currently driving with SOC < 30%",
-    "No data available for the past 7 days",
+    "57%; No data",
+    "2 vehicles; 0 vehicle",
+    "Yes, GBM6296G; No data", # GOOD
+    "57.5%", # GOOD, fleet id 2?
+    "GBM6296G; No data",
+    "0 vehicle; No data",
+    "Request user to ask one question at a time",
 ]
 
 # --- Helpers ---

@@ -52,6 +52,7 @@ def generate_query_prompt(dialect, row_limit, time_limit_sec, mappings=""):
     - Only select columns relevant to the question—never use SELECT *
     - Do not make any DML statements (INSERT, UPDATE, DELETE, DROP, etc.)
     - You may order results by a meaningful column to surface the most relevant data
+    - Interpret time-related phrases (e.g., “last 24h”, “currently”, “right now”) accurately and convert them into the correct time filters in the query
     """
 
 def check_query_prompt(dialect):
