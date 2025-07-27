@@ -19,12 +19,12 @@ SAMPLE_QUESTIONS = [
 ]
 
 SAMPLE_ANSWERS = [
-    "57%; No data",
-    "2 vehicles; 0 vehicle",
-    "Yes, GBM6296G; No data", # GOOD
-    "57.5%", # GOOD, fleet id 2?
-    "GBM6296G; No data",
-    "0 vehicle; No data",
+    "Fleet 1: 57%; Fleet 2: No data",
+    "Fleet 1: 2 vehicles; Fleet 2: 0 vehicle",
+    "Fleet 1: Yes, GBM6296G; Fleet 2: No data", 
+    "Fleet 1: 57.5%, 60.0%", 
+    "Fleet 1: GBM6296G; Fleet 2: No data",
+    "Fleet 1: 0 vehicle; Fleet 2: 0 vehicle;",   
     "Request user to ask one question at a time",
 ]
 
